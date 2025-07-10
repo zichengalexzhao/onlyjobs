@@ -27,18 +27,19 @@ python main.py
 
 ## **📁 Project Structure**
 
-
 * `/frontend` - React application with Firebase Auth
 * `/backend` - FastAPI backend services
 * `/docs` - Architecture and API documentation
 
 ## 👥 Team
 
+[Andrew Ting](https://github.com/AndrewTing89)
 
-Andrew Ting, Xianglong (Jason) Wang, Zicheng (Alex) Zhao
+[Xianglong (Jason) Wang](https://github.com/XianglongWang)
+
+[Zicheng (Alex) Zhao](https://github.com/zichengalexzhao)
 
 ## **🔧 Tech Stack**
-
 
 * **Frontend**: React, TypeScript, Firebase Auth, Chakra UI
 * **Backend**: FastAPI, Google Cloud Run, BigQuery
