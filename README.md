@@ -69,12 +69,12 @@ git checkout -b feature/firebase-auth
 
 ## **Git Workflow**
 
-1. Main branch: \`main\` (production-ready)
-2. Development branch: \`develop\` (integration)
-3. Feature branches: \`feature/your-feature-name\`
+1. Main branch: `main` (production-ready)
+2. Development branch: `develop` (integration)
+3. Feature branches: `feature/your-feature-name`
 
 ### **How to work**
 
-Always create feature branches from \`develop\`
+Always create feature branches from `develop`
 
-Make pull requests to \`develop\` - Only merge \`develop\` to \`main\` when ready for production
+Make pull requests to `develop` - Only merge `develop` to `main` when ready for production
