@@ -78,3 +78,12 @@ git checkout -b feature/firebase-auth
 Always create feature branches from `develop`
 
 Make pull requests to `develop` - Only merge `develop` to `main` when ready for production
+
+## 🔧 Configuration Update (IMPORTANT)
+
+As of [date], we've migrated to the official GCP/Firebase project. All team members need to:
+1. Get the new Firebase configuration from the team lead
+2. Update your `.env.local` file with the new values
+3. Restart your development server
+
+Never commit `.env.local` files!
