@@ -50,7 +50,7 @@ This service is deployed as a Google Cloud Run service. The entire build and dep
     # Example command executed from deployment.ipynb (project root):
     gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/process-emails ./backend/services/process_emails
     ```
-2.  **Deploy to Cloud Run:** The built Docker image is deployed as a Cloud Run service. This command also sets the necessary environment variables for the service.
+2.  **Deploy to Cloud Run:** The Docker image is deployed as a Cloud Run service. This command also sets the necessary environment variables for the service.
     ```bash
     # Example command executed from deployment.ipynb:
     gcloud run deploy process-emails --image gcr.io/YOUR_PROJECT_ID/process-emails --platform managed --region us-central1 --no-allow-unauthenticated --set-env-vars ...
@@ -70,7 +70,19 @@ The **service account** associated with this Cloud Run service (e.g., `process-e
 
 Both local component testing and cloud integration testing are performed using Jupyter Notebooks.
 
-* **Local Component Testing:** For development and debugging of the `main.py` and `classifier_logic.py` components in isolation, you can use a local test notebook (e.g., `local_test.ipynb` if you created one in this directory).
-* **Cloud Integration Testing:** After deployment, end-to-end testing of the deployed `process_emails` service is performed using the `integration_tests.ipynb` Jupyter Notebook located at the **project root**. This notebook publishes test messages to Pub/Sub, which then triggers the deployed Cloud Run service. Verification is done by checking Cloud Logging, BigQuery, and Firestore.
+* **Local Component Testing:**
+    For development and debugging of the `main.py` and `classifier_logic.py` components in isolation, you can use a local test notebook (e.g., `test_process_emails_local.ipynb` if you created one in this directory).
 
----
+* **Cloud Integration Testing (Phase 1 Validation):**
+    After deploying the `process_emails` service to Cloud Run and configuring its IAM permissions and Pub/Sub trigger, its end-to-end functionality is validated using the `integration_tests.ipynb` Jupyter Notebook located at the **project root**.
+
+    **Procedure within `integration_tests.ipynb`:**
+    1.  The notebook **publishes a test message to the `new-emails-topic` Pub/Sub topic** using the `google-cloud-pubsub` client library. This action directly tests the Pub/Sub publishing functionality and its ability to trigger the Cloud Run service.
+    2.  This Pub/Sub message then triggers the deployed `process-emails` Cloud Run service.
+
+    **Verification Steps (Manual after publishing message):**
+    1.  **Monitor Cloud Logging:** Go to the Google Cloud Console, navigate to Cloud Logging, and filter logs for your `process-emails` Cloud Run service. Look for success messages like "✅ Inserted ... to BigQuery" and "✅ Saved email ... to Firestore."
+    2.  **Verify Data in BigQuery:** In the BigQuery Console, inspect the `user_data.job_applications` table. Run a `SELECT *` query or use the "Preview" tab to confirm the classified data for your `user_id` has been inserted.
+    3.  **Verify Data in Firestore:** In the Firebase Console, navigate to "Firestore Database" -> "Data". Confirm that a `users` collection exists, containing a document for your `user_id`, and within that, a `job_applications` subcollection with your classified email data.
+
+This comprehensive testing procedure confirms that Phase 1 is fully functional in the cloud environment.
