@@ -12,7 +12,7 @@ import {
   GoogleAuthProvider,
   AuthError
 } from 'firebase/auth';
-import { auth, googleProvider, appleProvider } from '../config/firebase';
+import { auth, googleProvider, appleProvider, gmailProvider } from '../config/firebase';
 
 // Types
 interface AuthContextType {
@@ -33,6 +33,12 @@ interface AuthContextType {
   // Token management
   getIdToken: () => Promise<string | null>;
   getIdTokenResult: () => Promise<any | null>;
+  
+  // Gmail integration
+  connectGmail: () => Promise<void>;
+  disconnectGmail: () => Promise<void>;
+  isGmailConnected: boolean;
+  getGmailToken: () => string | null;
   
   // User state
   isEmailVerified: boolean;
@@ -56,12 +62,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isNewUser, setIsNewUser] = useState(false);
+  const [isGmailConnected, setIsGmailConnected] = useState(false);
 
   // Listen for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
+      // Check if Gmail is connected when user changes
+      if (user) {
+        const gmailToken = localStorage.getItem('gmail_access_token');
+        setIsGmailConnected(!!gmailToken);
+      } else {
+        setIsGmailConnected(false);
+      }
     });
 
     return unsubscribe;
@@ -166,6 +180,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await signOut(auth);
       // Clear any stored tokens
       sessionStorage.removeItem('google_access_token');
+      localStorage.removeItem('gmail_access_token');
+      setIsGmailConnected(false);
       console.log('User logged out');
     } catch (error) {
       console.error('Logout error:', error);
@@ -236,6 +252,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Gmail integration functions
+  const connectGmail = async () => {
+    if (!currentUser) throw new Error('No user logged in');
+    
+    try {
+      // Configure Gmail provider with custom parameters
+      gmailProvider.setCustomParameters({
+        prompt: 'consent',
+        access_type: 'offline'
+      });
+      
+      const result = await signInWithPopup(auth, gmailProvider);
+      
+      // Get Gmail access token
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential?.accessToken;
+      
+      if (token) {
+        // Store Gmail token separately for API calls
+        localStorage.setItem('gmail_access_token', token);
+        setIsGmailConnected(true);
+        console.log('Gmail connected successfully');
+      } else {
+        throw new Error('Failed to get Gmail access token');
+      }
+      
+    } catch (error) {
+      console.error('Gmail connection error:', error);
+      throw error;
+    }
+  };
+
+  const disconnectGmail = async () => {
+    try {
+      // Remove stored Gmail token
+      localStorage.removeItem('gmail_access_token');
+      setIsGmailConnected(false);
+      console.log('Gmail disconnected');
+    } catch (error) {
+      console.error('Gmail disconnection error:', error);
+      throw error;
+    }
+  };
+
+  const getGmailToken = (): string | null => {
+    return localStorage.getItem('gmail_access_token');
+  };
+
   // Context value
   const value: AuthContextType = {
     currentUser,
@@ -250,6 +314,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sendVerificationEmail,
     getIdToken,
     getIdTokenResult,
+    connectGmail,
+    disconnectGmail,
+    isGmailConnected,
+    getGmailToken,
     isEmailVerified: currentUser?.emailVerified || false,
     isNewUser
   };

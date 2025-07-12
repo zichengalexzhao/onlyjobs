@@ -20,6 +20,13 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const appleProvider = new OAuthProvider('apple.com');
 
+// Gmail-specific Google provider with required scopes
+export const gmailProvider = new GoogleAuthProvider();
+gmailProvider.addScope('https://www.googleapis.com/auth/gmail.readonly');
+gmailProvider.addScope('https://www.googleapis.com/auth/gmail.labels');
+gmailProvider.addScope('email');
+gmailProvider.addScope('profile');
+
 // Initialize Analytics (optional)
 export const analytics = getAnalytics(app);
 
