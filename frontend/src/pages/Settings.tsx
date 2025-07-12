@@ -36,16 +36,14 @@ const textColor = "#202020";
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { currentUser, updateUserProfile, logout } = useAuth();
+  const { currentUser, updateUserProfile, logout, connectGmail, disconnectGmail, isGmailConnected } = useAuth();
   
   const [displayName, setDisplayName] = useState(currentUser?.displayName || "");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  
-  // Gmail integration status (this would come from backend in real implementation)
-  const [gmailConnected, setGmailConnected] = useState(false);
+  const [gmailLoading, setGmailLoading] = useState(false);
   
   // Notification preferences
   const [notifications, setNotifications] = useState({
@@ -75,10 +73,24 @@ export default function Settings() {
     }
   };
 
-  const handleGmailConnect = () => {
-    // This would integrate with backend Gmail OAuth in real implementation
-    setGmailConnected(!gmailConnected);
-    setMessage(gmailConnected ? "Gmail disconnected" : "Gmail connected successfully!");
+  const handleGmailConnect = async () => {
+    try {
+      setError("");
+      setMessage("");
+      setGmailLoading(true);
+      
+      if (isGmailConnected) {
+        await disconnectGmail();
+        setMessage("Gmail disconnected successfully!");
+      } else {
+        await connectGmail();
+        setMessage("Gmail connected successfully! Your emails will now be processed for job application tracking.");
+      }
+    } catch (err) {
+      setError(getAuthErrorMessage(err as AuthError));
+    } finally {
+      setGmailLoading(false);
+    }
   };
 
   const handleDeleteAccount = () => {
@@ -205,35 +217,36 @@ export default function Settings() {
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <Box>
                 <Typography variant="body1" sx={{ color: textColor, mb: 1 }}>
-                  {gmailConnected ? "Gmail Connected" : "Connect Gmail Account"}
+                  {isGmailConnected ? "Gmail Connected" : "Connect Gmail Account"}
                 </Typography>
                 <Typography variant="body2" sx={{ color: "#666" }}>
-                  {gmailConnected 
+                  {isGmailConnected 
                     ? "Your Gmail is connected and syncing job application emails"
                     : "Connect your Gmail to automatically track job application emails"
                   }
                 </Typography>
               </Box>
               <Button
-                variant={gmailConnected ? "outlined" : "contained"}
+                variant={isGmailConnected ? "outlined" : "contained"}
                 onClick={handleGmailConnect}
-                startIcon={gmailConnected ? <LinkOff /> : <LinkIcon />}
+                disabled={gmailLoading}
+                startIcon={gmailLoading ? <CircularProgress size={20} /> : (isGmailConnected ? <LinkOff /> : <LinkIcon />)}
                 sx={{
-                  background: gmailConnected ? "transparent" : accent,
+                  background: isGmailConnected ? "transparent" : accent,
                   borderColor: accent,
-                  color: gmailConnected ? accent : white,
+                  color: isGmailConnected ? accent : white,
                   borderRadius: 2,
                   px: 3,
                   py: 1,
                   textTransform: "none",
                   boxShadow: "none",
                   "&:hover": {
-                    background: gmailConnected ? `${accent}05` : accent,
+                    background: isGmailConnected ? `${accent}05` : accent,
                     boxShadow: "none",
                   },
                 }}
               >
-                {gmailConnected ? "Disconnect" : "Connect Gmail"}
+                {gmailLoading ? (isGmailConnected ? "Disconnecting..." : "Connecting...") : (isGmailConnected ? "Disconnect" : "Connect Gmail")}
               </Button>
             </Box>
           </CardContent>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   CssBaseline,
@@ -20,9 +20,14 @@ import {
   TableHead,
   TableRow,
   TableCell,
-  TableBody
+  TableBody,
+  CircularProgress,
+  Alert,
+  Snackbar
 } from "@mui/material";
-import { Home, Assignment, BarChart, Person } from "@mui/icons-material";
+import { Home, Assignment, BarChart, Person, Mail, Check } from "@mui/icons-material";
+import { useAuth, getAuthErrorMessage } from "../contexts/AuthContext";
+import { AuthError } from "firebase/auth";
 import {
   PieChart,
   Pie,
@@ -83,6 +88,34 @@ const sidebarItems = [
 ];
 
 export default function Dashboard() {
+  const { connectGmail, isGmailConnected } = useAuth();
+  const [gmailLoading, setGmailLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" });
+
+  const handleGmailConnect = async () => {
+    try {
+      setGmailLoading(true);
+      await connectGmail();
+      setSnackbar({
+        open: true,
+        message: "Gmail connected successfully! Your emails will now be processed for job application tracking.",
+        severity: "success"
+      });
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: getAuthErrorMessage(err as AuthError),
+        severity: "error"
+      });
+    } finally {
+      setGmailLoading(false);
+    }
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
   return (
     <Box sx={{ display: "flex", height: "100vh", background: white }}>
       <CssBaseline />
@@ -129,8 +162,29 @@ export default function Dashboard() {
               Dashboard
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Button variant="contained" sx={{ background: accent, borderRadius: 2, boxShadow: "none", textTransform: "none" }}>
-                Connect Gmail
+              <Button 
+                variant="contained" 
+                onClick={handleGmailConnect}
+                disabled={gmailLoading || isGmailConnected}
+                startIcon={
+                  gmailLoading ? <CircularProgress size={20} color="inherit" /> : 
+                  isGmailConnected ? <Check /> : <Mail />
+                }
+                sx={{ 
+                  background: isGmailConnected ? "#4caf50" : accent, 
+                  borderRadius: 2, 
+                  boxShadow: "none", 
+                  textTransform: "none",
+                  "&:hover": {
+                    background: isGmailConnected ? "#4caf50" : accent,
+                  },
+                  "&:disabled": {
+                    background: isGmailConnected ? "#4caf50" : "#ccc",
+                    color: "white"
+                  }
+                }}
+              >
+                {gmailLoading ? "Connecting..." : isGmailConnected ? "Gmail Connected" : "Connect Gmail"}
               </Button>
               <Avatar sx={{ bgcolor: accent }}>J</Avatar>
             </Box>
@@ -211,6 +265,22 @@ export default function Dashboard() {
           </Box>
         </Box>
       </Box>
+
+      {/* Snackbar for feedback */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleSnackbarClose} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 } 
