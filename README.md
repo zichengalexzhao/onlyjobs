@@ -248,7 +248,9 @@ FIRESTORE_DATABASE_ID=emails-firestore
   - Real-time data visualization with bar and pie charts
   - Gmail integration button for email syncing
 - **Settings**: User profile management and preferences
+- **Legal Pages**: Terms of Service and Privacy Policy
 - **Error Handling**: Professional 404 page
+- **Missing**: Profile and Applications detail pages (awaiting UI/UX designs)
 
 ### Design System
 - **Color Palette**: Warm orange theme (#FF7043 accent, #FFD7B5 sidebar)
