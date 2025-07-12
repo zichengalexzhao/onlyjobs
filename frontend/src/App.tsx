@@ -13,6 +13,8 @@ const SignupPage = lazy(() => import('./pages/SignupPage'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const Settings = lazy(() => import('./pages/Settings'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function App() {
@@ -26,6 +28,8 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
             
             {/* Semi-protected route (logged in but email not verified) */}
             <Route 

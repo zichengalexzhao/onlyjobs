@@ -305,6 +305,7 @@ Public routes:
   - Password reset functionality
   - Dashboard with charts and analytics
   - User settings and profile management
+  - Terms of Service and Privacy Policy pages
   - Professional 404 error page
 
 - **Authentication**: Full Firebase integration
@@ -348,10 +349,15 @@ The frontend is **complete and ready** but currently uses dummy data. Real integ
 4. **Performance**: Add loading states and caching
 5. **Testing**: Expand test coverage for all components
 
+### ⚠️ Still Missing (Lower Priority)
+- **Profile/Applications Pages**: Waiting for UI/UX designer drafts
+- **Advanced Features**: Search, filters, export functionality  
+- **Real Data Integration**: Needs backend REST APIs first
+
 ### 👨‍💻 Developer Handoff
 **Backend Team**: Please implement the REST API endpoints listed above. The frontend is designed to consume these APIs and will work immediately once they're available.
 
-**Frontend Team**: Focus on advanced features and optimizations once core APIs are ready.
+**Frontend Team**: Focus on Profile/Applications pages once UI/UX designs are ready, then advanced features after core APIs are available.
 
 ## 📝 License
 
