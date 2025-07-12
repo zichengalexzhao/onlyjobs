@@ -307,11 +307,21 @@ export default function SignupPage() {
                 label={
                   <Typography variant="body2" sx={{ color: "#666" }}>
                     I accept the{" "}
-                    <Link href="#" sx={{ color: accent, textDecoration: "none" }}>
+                    <Link 
+                      component="button"
+                      type="button"
+                      onClick={() => navigate("/terms")}
+                      sx={{ color: accent, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+                    >
                       Terms of Service
                     </Link>{" "}
                     and{" "}
-                    <Link href="#" sx={{ color: accent, textDecoration: "none" }}>
+                    <Link 
+                      component="button"
+                      type="button"
+                      onClick={() => navigate("/privacy")}
+                      sx={{ color: accent, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+                    >
                       Privacy Policy
                     </Link>
                   </Typography>
