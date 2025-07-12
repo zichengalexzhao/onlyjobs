@@ -13,7 +13,7 @@ import {
   CircularProgress,
   Link
 } from "@mui/material";
-import { Google } from "@mui/icons-material";
+import { Google, Apple } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAuth, getAuthErrorMessage } from "../contexts/AuthContext";
 import { AuthError } from "firebase/auth";
@@ -24,7 +24,7 @@ const textColor = "#202020";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, loginWithApple } = useAuth();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,6 +64,19 @@ export default function LoginPage() {
     }
   };
 
+  const handleAppleLogin = async () => {
+    try {
+      setError("");
+      setLoading(true);
+      await loginWithApple();
+      navigate("/dashboard");
+    } catch (err) {
+      setError(getAuthErrorMessage(err as AuthError));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box sx={{ minHeight: "100vh", background: white, display: "flex", alignItems: "center" }}>
       <CssBaseline />
@@ -94,7 +107,7 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            {/* Google Login */}
+            {/* Social Login Buttons */}
             <Button
               fullWidth
               variant="outlined"
@@ -102,6 +115,30 @@ export default function LoginPage() {
               onClick={handleGoogleLogin}
               disabled={loading}
               startIcon={<Google />}
+              sx={{
+                borderColor: "#ddd",
+                color: textColor,
+                borderRadius: 2,
+                py: 1.5,
+                mb: 2,
+                textTransform: "none",
+                fontSize: 16,
+                "&:hover": {
+                  borderColor: accent,
+                  background: `${accent}05`
+                }
+              }}
+            >
+              {loading ? <CircularProgress size={24} /> : "Continue with Google"}
+            </Button>
+
+            <Button
+              fullWidth
+              variant="outlined"
+              size="large"
+              onClick={handleAppleLogin}
+              disabled={loading}
+              startIcon={<Apple />}
               sx={{
                 borderColor: "#ddd",
                 color: textColor,
@@ -116,7 +153,7 @@ export default function LoginPage() {
                 }
               }}
             >
-              {loading ? <CircularProgress size={24} /> : "Continue with Google"}
+              {loading ? <CircularProgress size={24} /> : "Continue with Apple"}
             </Button>
 
             <Divider sx={{ my: 3 }}>

@@ -12,7 +12,7 @@ import {
   GoogleAuthProvider,
   AuthError
 } from 'firebase/auth';
-import { auth, googleProvider } from '../config/firebase';
+import { auth, googleProvider, appleProvider } from '../config/firebase';
 
 // Types
 interface AuthContextType {
@@ -25,6 +25,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   loginWithGoogle: () => Promise<void>;
+  loginWithApple: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (displayName: string) => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
@@ -138,6 +139,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Apple login
+  const loginWithApple = async () => {
+    try {
+      // Configure Apple OAuth
+      appleProvider.addScope('email');
+      appleProvider.addScope('name');
+      
+      const result = await signInWithPopup(auth, appleProvider);
+      
+      // Check if it's a new user
+      const isNew = result.user.metadata.creationTime === result.user.metadata.lastSignInTime;
+      setIsNewUser(isNew);
+      
+      console.log('Apple login successful:', result.user.uid);
+      
+    } catch (error) {
+      console.error('Apple login error:', error);
+      throw error;
+    }
+  };
+
   // Logout
   const logout = async () => {
     try {
@@ -222,6 +244,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     logout,
     loginWithGoogle,
+    loginWithApple,
     resetPassword,
     updateUserProfile,
     sendVerificationEmail,
