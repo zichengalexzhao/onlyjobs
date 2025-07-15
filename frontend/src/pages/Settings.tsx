@@ -22,7 +22,8 @@ import {
   Person, 
   Notifications, 
   DeleteForever,
-  ArrowBack
+  ArrowBack,
+  Code
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAuth, getAuthErrorMessage } from "../contexts/AuthContext";
@@ -36,7 +37,7 @@ const textColor = "#202020";
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { currentUser, updateUserProfile, logout } = useAuth();
+  const { currentUser, updateUserProfile, logout, getIdToken } = useAuth();
   
   const [displayName, setDisplayName] = useState(currentUser?.displayName || "");
   const [loading, setLoading] = useState(false);
@@ -44,6 +45,7 @@ export default function Settings() {
   const [error, setError] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isGmailConnected, setIsGmailConnected] = useState(false);
+  const [fetchingToken, setFetchingToken] = useState(false);
   
   // Notification preferences
   const [notifications, setNotifications] = useState({
@@ -94,6 +96,33 @@ export default function Settings() {
       navigate("/");
     } catch (err) {
       setError("Failed to delete account. Please try again.");
+    }
+  };
+
+  const handleGetFirebaseToken = async () => {
+    if (!currentUser) {
+      setError("No user logged in");
+      return;
+    }
+
+    try {
+      setFetchingToken(true);
+      setError("");
+      setMessage("");
+      
+      const token = await getIdToken();
+      if (token) {
+        console.log("=== Firebase ID Token for Backend Testing ===");
+        console.log(token);
+        console.log("=== Copy the token above to test backend endpoints ===");
+        setMessage("Firebase ID token logged to console! Check the browser console and copy the token for backend testing.");
+      } else {
+        setError("Failed to get Firebase ID token");
+      }
+    } catch (err) {
+      setError("Error getting Firebase ID token: " + (err instanceof Error ? err.message : 'Unknown error'));
+    } finally {
+      setFetchingToken(false);
     }
   };
 
@@ -288,6 +317,53 @@ export default function Settings() {
                 }
                 label="Weekly summary digest"
               />
+            </Box>
+          </CardContent>
+        </Card>
+
+        {/* Developer Tools Section */}
+        <Card sx={{ bgcolor: white, borderRadius: 3, boxShadow: 1, mb: 3, border: "1px solid #e3f2fd" }}>
+          <CardContent sx={{ p: 4 }}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+              <Code sx={{ color: accent, mr: 2 }} />
+              <Typography variant="h6" sx={{ color: textColor, fontWeight: 600 }}>
+                Developer Tools
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Box>
+                <Typography variant="body1" sx={{ color: textColor, mb: 1 }}>
+                  Get Firebase ID Token
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#666" }}>
+                  Logs your current Firebase ID token to the console for backend testing and debugging.
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                onClick={handleGetFirebaseToken}
+                disabled={fetchingToken || !currentUser}
+                startIcon={fetchingToken ? <CircularProgress size={20} /> : <Code />}
+                sx={{
+                  borderColor: accent,
+                  color: accent,
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                  textTransform: "none",
+                  "&:hover": {
+                    borderColor: accent,
+                    background: `${accent}10`,
+                  },
+                  "&:disabled": {
+                    borderColor: "#ccc",
+                    color: "#ccc",
+                  },
+                }}
+              >
+                {fetchingToken ? "Getting Token..." : "Get Token"}
+              </Button>
             </Box>
           </CardContent>
         </Card>
