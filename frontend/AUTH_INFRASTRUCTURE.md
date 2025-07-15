@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document explains the authentication infrastructure for OnlyJobs. All auth logic is implemented and ready for UI components to be connected.
+This document explains the complete authentication infrastructure for OnlyJobs. The system includes Firebase Auth, Gmail OAuth integration, and a Firebase ID token debug tool for backend testing.
 
 ## For Frontend Developers (UI/UX Implementation)
 
@@ -76,41 +76,50 @@ const {
   loading,          // Boolean - auth state loading
   isEmailVerified,  // Boolean - email verified status
   isNewUser,        // Boolean - if just signed up
+  isGmailConnected, // Boolean - Gmail OAuth status
   
   // Methods
   signup,           // (email, password, displayName?) => Promise
   login,            // (email, password) => Promise
   logout,           // () => Promise
   loginWithGoogle,  // () => Promise
+  loginWithApple,   // () => Promise
   resetPassword,    // (email) => Promise
   updateUserProfile,// (displayName) => Promise
   sendVerificationEmail, // () => Promise
   getIdToken,       // () => Promise<string>
+  getIdTokenResult, // () => Promise<any>
+  
+  // Gmail Integration
+  connectGmail,     // () => Promise<void>
+  disconnectGmail,  // () => Promise<void>
+  getGmailToken,    // () => string | null
 } = useAuth();
 ```
 
 ## For Backend Developer
 
-### Expected API Endpoints
+### Current API Endpoints
 
-Your API should handle these endpoints:
+✅ **Implemented Backend Endpoints** (Andrew):
 
 ```typescript
+// Gmail Integration (Cloud Run: https://manage-tokens-12002195951.us-central1.run.app)
+POST   /api/gmail/auth-url     // Return Google OAuth URL
+POST   /api/gmail/callback     // Handle OAuth callback
+POST   /api/gmail/disconnect   // Remove Gmail connection
+
+// 🔄 Still Needed:
 // User Management
 POST   /api/users              // Create user profile on signup
 GET    /api/users/me           // Get current user profile
 PUT    /api/users/me           // Update user profile
 
-// Gmail Integration
-GET    /api/gmail/auth-url     // Return Google OAuth URL
-POST   /api/gmail/callback     // Handle OAuth callback
-DELETE /api/gmail/disconnect   // Remove Gmail connection
-
 // Sync Operations
 POST   /api/sync/trigger       // Start email sync
 GET    /api/sync/status        // Get sync status
 
-// Job Applications (examples)
+// Job Applications
 GET    /api/applications       // Get user's applications
 GET    /api/applications/stats // Get dashboard statistics
 ```
@@ -210,25 +219,52 @@ src/
     └── validation.utils.ts  # Form validation
 ```
 
+## 🔧 Firebase ID Token Debug Tool
+
+### For Backend Testing
+
+A debug tool has been added to the Settings page to help with backend development and testing:
+
+**Location**: Settings Page → Developer Tools section
+
+**Functionality**:
+- Click "Get Token" button to retrieve current user's Firebase ID token
+- Token is logged to browser console with clear formatting
+- Easy copy-paste for manual backend testing
+
+**Usage**:
+```bash
+# Example backend testing with retrieved token
+curl -X POST https://manage-tokens-12002195951.us-central1.run.app/api/gmail/auth-url \
+  -H "Authorization: Bearer <COPIED_TOKEN>" \
+  -H "Content-Type: application/json"
+```
+
+**Implementation**: `src/pages/Settings.tsx:102-127`
+
 ## Integration Checklist
 
-### Frontend Team
+### Frontend Team ✅ COMPLETE
 
-* [ ]  Create login/signup UI components
-* [ ]  Connect forms to auth methods
-* [ ]  Add loading states during auth
-* [ ]  Display error messages
-* [ ]  Create email verification page
-* [ ]  Build dashboard layout
+* [x]  Create login/signup UI components
+* [x]  Connect forms to auth methods  
+* [x]  Add loading states during auth
+* [x]  Display error messages
+* [x]  Create email verification page
+* [x]  Build dashboard layout
+* [x]  Implement Gmail OAuth integration UI
+* [x]  Add Firebase token debug tool
+* [x]  Create navigation paths to settings
 
 ### Backend Team
 
-* [ ]  Implement all API endpoints
-* [ ]  Set up Firebase Admin SDK
-* [ ]  Configure CORS for frontend URL
-* [ ]  Create BigQuery user tables
-* [ ]  Implement Gmail OAuth flow
-* [ ]  Add token verification middleware
+* [x]  Set up Firebase Admin SDK ✅
+* [x]  Configure CORS for frontend URL ✅
+* [x]  Implement Gmail OAuth flow ✅
+* [x]  Add token verification middleware ✅
+* [ ]  Create BigQuery user tables 🔄
+* [ ]  Implement remaining API endpoints 🔄
+* [ ]  Connect OAuth tokens to email processing 🔄
 
 ## Questions?
 

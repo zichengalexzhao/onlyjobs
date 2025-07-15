@@ -275,23 +275,26 @@ FIRESTORE_DATABASE_ID=emails-firestore
 ## 🚀 Deployment Status
 
 - ✅ **Frontend**: Complete React app with Firebase Auth and full UI suite
-- ✅ **Gmail Integration UI**: Complete OAuth flow interface ready for backend integration
-- ✅ **Backend API**: FastAPI services (needs REST API layer)
-- ✅ **AI Processing**: Vertex AI email classification
-- ✅ **Data Storage**: BigQuery + Firestore
-- ✅ **GCP Deployment**: Cloud Run services
+- ✅ **Gmail OAuth Integration**: 
+  - **Frontend**: Complete OAuth UI with backend connection ✅
+  - **Backend**: Live Cloud Run service at `https://manage-tokens-12002195951.us-central1.run.app` ✅
+  - **Debug Tools**: Firebase token extraction tool for testing ✅
+- ✅ **Backend Services**: 
+  - **AI Processing**: Vertex AI email classification ✅
+  - **Data Storage**: BigQuery + Firestore ✅
+  - **GCP Deployment**: Cloud Run services ✅
 - ✅ **UI/UX**: Complete Material-UI interface with all pages
-- 🔄 **API Integration**: REST endpoints needed for frontend
+- 🔄 **API Integration**: Additional REST endpoints needed for job applications data
 - 🔄 **Analytics**: dbt transformations (planned)
 
 ## 🎯 Next Steps
 
 ### Backend Development (Priority)
 1. **REST API Layer**: Create FastAPI endpoints to bridge frontend with existing services
-   - `GET /api/applications` - Fetch user job applications from Firestore
-   - `GET /api/dashboard/stats` - Dashboard analytics from BigQuery
-   - `POST /api/gmail/connect` - Gmail OAuth integration
-   - `POST /api/sync/trigger` - Manual email sync
+   - ✅ **Gmail OAuth**: Complete and live at Cloud Run service
+   - 🔄 `GET /api/applications` - Fetch user job applications from Firestore
+   - 🔄 `GET /api/dashboard/stats` - Dashboard analytics from BigQuery
+   - 🔄 `POST /api/sync/trigger` - Manual email sync
    
 2. **Data Integration**: Connect existing Firestore data to frontend
    - User-specific job application queries
@@ -306,7 +309,8 @@ FIRESTORE_DATABASE_ID=emails-firestore
 ### Frontend Development (Enhancement)
 1. **Real Data Integration**: Replace dummy data once backend APIs are ready
    - Connect dashboard to live Firestore data
-   - ✅ Gmail OAuth integration UI complete - ready for backend integration
+   - ✅ **Gmail OAuth Integration**: Complete with live backend connection
+   - ✅ **Firebase Debug Tools**: Token extraction for backend testing
    - Add real-time data updates
 
 2. **Advanced Features**: Add enhanced functionality

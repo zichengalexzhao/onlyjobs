@@ -52,7 +52,35 @@ This guide covers how to test the Gmail OAuth integration that connects the fron
    - Popup closes, success message appears
    - Sync status component becomes available
 
-### 2. End-to-End Testing
+### 2. Firebase ID Token Debug Tool Testing
+
+#### **New Feature: Developer Tools**
+
+**Location**: Settings Page → Developer Tools section
+
+**Test Cases**:
+- [ ] Navigate to Settings page while logged in
+- [ ] Locate "Developer Tools" section with Code icon
+- [ ] Click "Get Token" button
+- [ ] Verify loading state during token retrieval
+- [ ] Check browser console for formatted token output:
+  ```
+  === Firebase ID Token for Backend Testing ===
+  [ACTUAL_TOKEN_HERE]
+  === Copy the token above to test backend endpoints ===
+  ```
+- [ ] Verify success message appears in UI
+- [ ] Copy token and test with backend endpoints
+
+#### **Backend Integration Testing**:
+```bash
+# Test with retrieved Firebase token
+curl -X POST https://manage-tokens-12002195951.us-central1.run.app/api/gmail/auth-url \
+  -H "Authorization: Bearer <COPIED_TOKEN>" \
+  -H "Content-Type: application/json"
+```
+
+### 3. End-to-End Testing
 
 #### Test Cases:
 
@@ -105,10 +133,24 @@ curl -X GET "https://us-central1-onlyjobs-465420.cloudfunctions.net/manage-token
 3. **"Failed to get OAuth URL"**: Check Cloud Function deployment
 4. **CORS errors**: Verify Cloud Function CORS settings
 
-### 4. Production Testing
+### 4. Updated Backend Configuration
+
+#### **Current Backend Status** ✅:
+- **Backend URL**: `https://manage-tokens-12002195951.us-central1.run.app`
+- **CORS Configured**: ✅ `http://localhost:3000`
+- **Firebase Integration**: ✅ Token validation working
+- **OAuth Endpoints**: ✅ All implemented
+
+#### **Testing Workflow** (Updated):
+1. **Get Firebase Token** using debug tool in Settings
+2. **Test Backend Endpoints** with real token
+3. **Complete OAuth Flow** end-to-end
+4. **Verify Data Storage** in BigQuery/Firestore
+
+### 5. Production Testing
 
 1. **Deploy Cloud Function** with production OAuth settings
-2. **Update redirect URI** to production domain
+2. **Update redirect URI** to production domain  
 3. **Test with production build**:
    ```bash
    npm run build
@@ -181,11 +223,12 @@ curl -X GET "https://us-central1-onlyjobs-465420.cloudfunctions.net/manage-token
    - Display processed emails
    - Add analytics views
 
-### For You (Frontend):
-1. **Add the test route** to your router
+### For Frontend Team:
+1. ✅ **Firebase Token Debug Tool** - Implemented in Settings page
 2. **Implement real-time sync updates** (WebSockets)
 3. **Add data persistence** for connection state
 4. **Improve error handling** with retry logic
+5. **Production deployment** configuration
 
 ## Security Considerations
 
@@ -208,19 +251,24 @@ curl -X GET "https://us-central1-onlyjobs-465420.cloudfunctions.net/manage-token
 ## Quick Start Commands
 
 ```bash
-# Backend (A)
-cd backend_launch_and_tests
-jupyter notebook deployments.ipynb
+# Backend (Andrew) ✅ DEPLOYED
+# Backend is live at: https://manage-tokens-12002195951.us-central1.run.app
 
-# Frontend (You)
+# Frontend 
 cd frontend
 npm start
 # Navigate to http://localhost:3000/settings
 
-# Testing
-# Click "Connect Gmail Account"
-# Grant permissions in popup
-# Test sync functionality
+# Testing Workflow
+1. Login to the app
+2. Go to Settings page  
+3. Click "Get Token" in Developer Tools section
+4. Copy Firebase token from console
+5. Test backend with: curl -X POST https://manage-tokens-12002195951.us-central1.run.app/api/gmail/auth-url \
+   -H "Authorization: Bearer <TOKEN>" -H "Content-Type: application/json"
+6. Click "Connect Gmail Account" 
+7. Complete OAuth flow
+8. Test sync functionality
 ```
 
 This integration provides a solid foundation for Gmail OAuth with proper error handling, beautiful UI components, and comprehensive testing capabilities.

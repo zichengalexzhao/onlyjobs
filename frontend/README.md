@@ -312,25 +312,44 @@ Public routes:
   - Terms of Service and Privacy Policy pages
   - Professional 404 error page
 
-- **Gmail Integration UI**: Complete OAuth flow interface
+- **Gmail Integration UI**: Complete OAuth flow interface **READY FOR BACKEND**
   - GmailConnection component with stepper UI
   - SyncStatus component with progress indicators
-  - Settings page integration
-  - Dashboard navigation paths
+  - Settings page integration with backend Cloud Run service
+  - Dashboard navigation paths with multiple access routes
   - Error handling and loading states
+  - **Backend Integration**: Connected to Andrew's Cloud Run service
+
+- **Developer Tools**: Firebase ID Token Debug Tool
+  - **Location**: Settings page → Developer Tools section
+  - **Purpose**: Extract Firebase tokens for backend testing
+  - **Usage**: Click "Get Token" → Copy from console → Test backend APIs
+  - **Implementation**: Logs formatted token for easy backend integration
 
 - **Authentication**: Full Firebase integration
   - Email/password, Google, and Apple sign-in
   - Protected routes and email verification
   - User session management
+  - **Token Management**: Real Firebase ID tokens for backend auth
 
 - **Design System**: Consistent Material-UI theming
   - Orange color palette (#FF7043)
   - Responsive design for all devices
   - Professional typography and spacing
 
-### 🔄 Waiting for Backend APIs
-The frontend is **complete and ready** but currently uses dummy data. Real integration requires:
+### 🔄 Backend Integration Status
+
+#### ✅ **Gmail OAuth APIs** - IMPLEMENTED by Andrew
+- **Backend URL**: `https://manage-tokens-12002195951.us-central1.run.app`
+- **Status**: 🟢 Live and ready for testing
+- **Endpoints**:
+  ```
+  POST /api/gmail/auth-url - OAuth URL ✅
+  POST /api/gmail/callback - Handle OAuth ✅  
+  POST /api/gmail/disconnect - Disconnect ✅
+  ```
+
+#### 🔄 **Still Needed APIs**:
 
 1. **Job Applications API**:
    ```
@@ -345,10 +364,8 @@ The frontend is **complete and ready** but currently uses dummy data. Real integ
    GET /api/analytics/trends - Application trends data
    ```
 
-3. **Gmail Integration API**:
+3. **Additional Sync APIs**:
    ```
-   GET /api/gmail/auth-url - OAuth URL
-   POST /api/gmail/callback - Handle OAuth
    POST /api/sync/trigger - Manual sync
    GET /api/sync/status - Sync status
    ```
@@ -366,9 +383,23 @@ The frontend is **complete and ready** but currently uses dummy data. Real integ
 - **Real Data Integration**: Needs backend REST APIs first
 
 ### 👨‍💻 Developer Handoff
-**Backend Team**: Please implement the REST API endpoints listed above. The frontend is designed to consume these APIs and will work immediately once they're available.
 
-**Frontend Team**: Focus on Profile/Applications pages once UI/UX designs are ready, then advanced features after core APIs are available.
+#### **For Andrew (Backend)**:
+1. ✅ **Gmail OAuth** - Complete and working
+2. 🔄 **Remaining APIs** - Implement job applications and dashboard endpoints
+3. 🔄 **Email Processing** - Connect OAuth tokens to Pub/Sub email processing pipeline
+4. 🔄 **Data APIs** - Bridge BigQuery/Firestore data to frontend REST endpoints
+
+#### **For Frontend Team**:
+1. ✅ **Gmail Integration** - Complete with debug tools
+2. 🔄 **Profile/Applications Pages** - Waiting for UI/UX designs
+3. 🔄 **Real Data Integration** - Ready once remaining APIs are available
+4. 🔄 **Advanced Features** - Search, filters, export functionality
+
+#### **Testing Ready**:
+- **Firebase Token Tool**: Use Settings → Developer Tools → "Get Token"
+- **Backend Testing**: `curl` commands with real Firebase tokens
+- **OAuth Flow**: Full end-to-end Gmail integration testing
 
 ## 📝 License
 
