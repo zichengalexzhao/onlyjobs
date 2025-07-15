@@ -22,13 +22,13 @@ import {
   Person, 
   Notifications, 
   DeleteForever,
-  Mail,
-  Link as LinkIcon,
-  LinkOff
+  ArrowBack
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAuth, getAuthErrorMessage } from "../contexts/AuthContext";
 import { AuthError } from "firebase/auth";
+import { GmailConnection } from "../components/GmailConnection";
+import { SyncStatus } from "../components/SyncStatus";
 
 const accent = "#FF7043";
 const white = "#fff";
@@ -36,14 +36,14 @@ const textColor = "#202020";
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { currentUser, updateUserProfile, logout, connectGmail, disconnectGmail, isGmailConnected } = useAuth();
+  const { currentUser, updateUserProfile, logout } = useAuth();
   
   const [displayName, setDisplayName] = useState(currentUser?.displayName || "");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [gmailLoading, setGmailLoading] = useState(false);
+  const [isGmailConnected, setIsGmailConnected] = useState(false);
   
   // Notification preferences
   const [notifications, setNotifications] = useState({
@@ -73,23 +73,12 @@ export default function Settings() {
     }
   };
 
-  const handleGmailConnect = async () => {
-    try {
-      setError("");
-      setMessage("");
-      setGmailLoading(true);
-      
-      if (isGmailConnected) {
-        await disconnectGmail();
-        setMessage("Gmail disconnected successfully!");
-      } else {
-        await connectGmail();
-        setMessage("Gmail connected successfully! Your emails will now be processed for job application tracking.");
-      }
-    } catch (err) {
-      setError(getAuthErrorMessage(err as AuthError));
-    } finally {
-      setGmailLoading(false);
+  const handleGmailConnectionChange = (connected: boolean) => {
+    setIsGmailConnected(connected);
+    if (connected) {
+      setMessage("Gmail connected successfully! Your emails will now be processed for job application tracking.");
+    } else {
+      setMessage("Gmail disconnected successfully!");
     }
   };
 
@@ -115,6 +104,22 @@ export default function Settings() {
       <Container maxWidth="md" sx={{ py: 4 }}>
         {/* Header */}
         <Box sx={{ mb: 4 }}>
+          <Button
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/dashboard')}
+            sx={{
+              mb: 2,
+              color: '#666',
+              textTransform: 'none',
+              fontSize: '14px',
+              '&:hover': {
+                backgroundColor: 'rgba(0,0,0,0.04)',
+                color: textColor,
+              },
+            }}
+          >
+            Back to Dashboard
+          </Button>
           <Typography variant="h4" sx={{ color: textColor, fontWeight: 700, mb: 1 }}>
             Account Settings
           </Typography>
@@ -205,52 +210,19 @@ export default function Settings() {
         </Card>
 
         {/* Gmail Integration Section */}
-        <Card sx={{ bgcolor: white, borderRadius: 3, boxShadow: 1, mb: 3 }}>
-          <CardContent sx={{ p: 4 }}>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-              <Mail sx={{ color: accent, mr: 2 }} />
-              <Typography variant="h6" sx={{ color: textColor, fontWeight: 600 }}>
-                Gmail Integration
-              </Typography>
-            </Box>
+        <Box sx={{ mb: 3 }}>
+          <GmailConnection
+            isConnected={isGmailConnected}
+            onConnectionChange={handleGmailConnectionChange}
+          />
+        </Box>
 
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <Box>
-                <Typography variant="body1" sx={{ color: textColor, mb: 1 }}>
-                  {isGmailConnected ? "Gmail Connected" : "Connect Gmail Account"}
-                </Typography>
-                <Typography variant="body2" sx={{ color: "#666" }}>
-                  {isGmailConnected 
-                    ? "Your Gmail is connected and syncing job application emails"
-                    : "Connect your Gmail to automatically track job application emails"
-                  }
-                </Typography>
-              </Box>
-              <Button
-                variant={isGmailConnected ? "outlined" : "contained"}
-                onClick={handleGmailConnect}
-                disabled={gmailLoading}
-                startIcon={gmailLoading ? <CircularProgress size={20} /> : (isGmailConnected ? <LinkOff /> : <LinkIcon />)}
-                sx={{
-                  background: isGmailConnected ? "transparent" : accent,
-                  borderColor: accent,
-                  color: isGmailConnected ? accent : white,
-                  borderRadius: 2,
-                  px: 3,
-                  py: 1,
-                  textTransform: "none",
-                  boxShadow: "none",
-                  "&:hover": {
-                    background: isGmailConnected ? `${accent}05` : accent,
-                    boxShadow: "none",
-                  },
-                }}
-              >
-                {gmailLoading ? (isGmailConnected ? "Disconnecting..." : "Connecting...") : (isGmailConnected ? "Disconnect" : "Connect Gmail")}
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
+        {/* Sync Status Section */}
+        {isGmailConnected && (
+          <Box sx={{ mb: 3 }}>
+            <SyncStatus isConnected={isGmailConnected} />
+          </Box>
+        )}
 
         {/* Notification Preferences */}
         <Card sx={{ bgcolor: white, borderRadius: 3, boxShadow: 1, mb: 3 }}>

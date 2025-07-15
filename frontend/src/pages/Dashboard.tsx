@@ -23,11 +23,28 @@ import {
   TableBody,
   CircularProgress,
   Alert,
-  Snackbar
+  Snackbar,
+  Menu,
+  MenuItem,
+  IconButton,
+  Tooltip
 } from "@mui/material";
-import { Home, Assignment, BarChart, Person, Mail, Check } from "@mui/icons-material";
+import { 
+  Home, 
+  Assignment, 
+  BarChart, 
+  Person, 
+  Mail, 
+  Check, 
+  Settings,
+  AccountCircle,
+  Logout,
+  KeyboardArrowDown,
+  Tune
+} from "@mui/icons-material";
 import { useAuth, getAuthErrorMessage } from "../contexts/AuthContext";
 import { AuthError } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 import {
   PieChart,
   Pie,
@@ -36,7 +53,7 @@ import {
   Bar,
   XAxis,
   YAxis,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer
 } from "recharts";
 
@@ -81,16 +98,19 @@ const textColor = "#202020";
 
 // Sidebar items
 const sidebarItems = [
-  { text: "Dashboard", icon: <Home /> },
-  { text: "Applications", icon: <Assignment /> },
-  { text: "Visualizations", icon: <BarChart /> },
-  { text: "Profile", icon: <Person /> }
+  { text: "Dashboard", icon: <Home />, active: true },
+  { text: "Applications", icon: <Assignment />, active: false },
+  { text: "Visualizations", icon: <BarChart />, active: false },
+  { text: "Profile", icon: <Person />, active: false },
+  { text: "Settings", icon: <Settings />, active: false }
 ];
 
 export default function Dashboard() {
-  const { connectGmail, isGmailConnected } = useAuth();
+  const { connectGmail, isGmailConnected, currentUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [gmailLoading, setGmailLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" });
+  const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
 
   const handleGmailConnect = async () => {
     try {
@@ -114,6 +134,40 @@ export default function Dashboard() {
 
   const handleSnackbarClose = () => {
     setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setProfileMenuAnchor(event.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => {
+    setProfileMenuAnchor(null);
+  };
+
+  const handleNavigateToSettings = () => {
+    navigate('/settings');
+    handleProfileMenuClose();
+  };
+
+  const handleSidebarNavigation = (item: { text: string }) => {
+    if (item.text === 'Settings') {
+      navigate('/settings');
+    } else if (item.text === 'Dashboard') {
+      // Already on dashboard
+    } else {
+      // Add other navigation logic here when those pages are implemented
+      console.log(`Navigate to ${item.text}`);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+    handleProfileMenuClose();
   };
 
   return (
@@ -144,7 +198,11 @@ export default function Dashboard() {
         <List>
           {sidebarItems.map((item, idx) => (
             <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
-              <ListItemButton selected={idx === 0} sx={{ borderRadius: 2 }}>
+              <ListItemButton 
+                selected={item.active} 
+                sx={{ borderRadius: 2 }}
+                onClick={() => handleSidebarNavigation(item)}
+              >
                 <ListItemIcon sx={{ color: accent }}>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.text} />
               </ListItemButton>
@@ -162,31 +220,99 @@ export default function Dashboard() {
               Dashboard
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Button 
-                variant="contained" 
-                onClick={handleGmailConnect}
-                disabled={gmailLoading || isGmailConnected}
-                startIcon={
-                  gmailLoading ? <CircularProgress size={20} color="inherit" /> : 
-                  isGmailConnected ? <Check /> : <Mail />
-                }
-                sx={{ 
-                  background: isGmailConnected ? "#4caf50" : accent, 
-                  borderRadius: 2, 
-                  boxShadow: "none", 
-                  textTransform: "none",
-                  "&:hover": {
-                    background: isGmailConnected ? "#4caf50" : accent,
-                  },
-                  "&:disabled": {
-                    background: isGmailConnected ? "#4caf50" : "#ccc",
-                    color: "white"
+              {/* Gmail Connection Status with Quick Settings Access */}
+              <Tooltip title={isGmailConnected ? "Gmail connected - Click to manage" : "Connect Gmail to sync job emails"}>
+                <Button 
+                  variant="contained" 
+                  onClick={isGmailConnected ? handleNavigateToSettings : handleGmailConnect}
+                  disabled={gmailLoading}
+                  startIcon={
+                    gmailLoading ? <CircularProgress size={20} color="inherit" /> : 
+                    isGmailConnected ? <Check /> : <Mail />
                   }
-                }}
-              >
-                {gmailLoading ? "Connecting..." : isGmailConnected ? "Gmail Connected" : "Connect Gmail"}
-              </Button>
-              <Avatar sx={{ bgcolor: accent }}>J</Avatar>
+                  endIcon={isGmailConnected ? <Tune sx={{ fontSize: 16 }} /> : null}
+                  sx={{ 
+                    background: isGmailConnected ? "#4caf50" : accent, 
+                    borderRadius: 2, 
+                    boxShadow: "none", 
+                    textTransform: "none",
+                    "&:hover": {
+                      background: isGmailConnected ? "#388e3c" : accent,
+                    },
+                    "&:disabled": {
+                      background: "#ccc",
+                      color: "white"
+                    }
+                  }}
+                >
+                  {gmailLoading ? "Connecting..." : isGmailConnected ? "Gmail Connected" : "Connect Gmail"}
+                </Button>
+              </Tooltip>
+
+              {/* User Profile Dropdown */}
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <IconButton
+                  onClick={handleProfileMenuOpen}
+                  sx={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    gap: 1,
+                    color: textColor,
+                    "&:hover": { bgcolor: "rgba(0,0,0,0.04)" }
+                  }}
+                >
+                  <Avatar sx={{ bgcolor: accent, width: 36, height: 36 }}>
+                    {currentUser?.displayName?.charAt(0) || currentUser?.email?.charAt(0) || 'U'}
+                  </Avatar>
+                  <KeyboardArrowDown sx={{ fontSize: 20 }} />
+                </IconButton>
+                
+                <Menu
+                  anchorEl={profileMenuAnchor}
+                  open={Boolean(profileMenuAnchor)}
+                  onClose={handleProfileMenuClose}
+                  PaperProps={{
+                    sx: {
+                      mt: 1,
+                      borderRadius: 2,
+                      minWidth: 200,
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
+                    }
+                  }}
+                >
+                  <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid #eee" }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: textColor }}>
+                      {currentUser?.displayName || "User"}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#666" }}>
+                      {currentUser?.email}
+                    </Typography>
+                  </Box>
+                  
+                  <MenuItem onClick={handleNavigateToSettings} sx={{ py: 1.5 }}>
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <Settings sx={{ fontSize: 20 }} />
+                    </ListItemIcon>
+                    <ListItemText primary="Settings" />
+                  </MenuItem>
+                  
+                  <MenuItem onClick={() => handleProfileMenuClose()} sx={{ py: 1.5 }}>
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <AccountCircle sx={{ fontSize: 20 }} />
+                    </ListItemIcon>
+                    <ListItemText primary="Profile" />
+                  </MenuItem>
+                  
+                  <Divider />
+                  
+                  <MenuItem onClick={handleLogout} sx={{ py: 1.5, color: "#d32f2f" }}>
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <Logout sx={{ fontSize: 20, color: "#d32f2f" }} />
+                    </ListItemIcon>
+                    <ListItemText primary="Logout" />
+                  </MenuItem>
+                </Menu>
+              </Box>
             </Box>
           </Toolbar>
         </AppBar>
@@ -202,6 +328,60 @@ export default function Dashboard() {
             </Card>
           ))}
         </Box>
+
+        {/* Gmail Connection Status Banner */}
+        {!isGmailConnected && (
+          <Card sx={{ 
+            mb: 3, 
+            bgcolor: "#fff3e0", 
+            borderRadius: 3, 
+            boxShadow: "none",
+            border: "1px solid #ffcc02"
+          }}>
+            <CardContent sx={{ py: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Mail sx={{ color: "#f57c00" }} />
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: textColor }}>
+                      Gmail Not Connected
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#666" }}>
+                      Connect your Gmail to automatically track job application emails
+                    </Typography>
+                  </Box>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={handleGmailConnect}
+                    disabled={gmailLoading}
+                    sx={{
+                      bgcolor: "#f57c00",
+                      textTransform: "none",
+                      "&:hover": { bgcolor: "#ef6c00" }
+                    }}
+                  >
+                    Connect Now
+                  </Button>
+                  <Button
+                    variant="text"
+                    size="small"
+                    onClick={handleNavigateToSettings}
+                    sx={{
+                      color: "#f57c00",
+                      textTransform: "none",
+                      "&:hover": { bgcolor: "rgba(245, 124, 0, 0.04)" }
+                    }}
+                  >
+                    Settings
+                  </Button>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Main Content Area */}
         <Box sx={{ display: "flex", gap: 3 }}>
@@ -243,7 +423,7 @@ export default function Dashboard() {
                 <BarChartC data={barData}>
                   <XAxis dataKey="name" stroke="#999" />
                   <YAxis />
-                  <Tooltip />
+                  <RechartsTooltip />
                   <Bar dataKey="count" fill={accent} radius={[6, 6, 0, 0]} />
                 </BarChartC>
               </ResponsiveContainer>
@@ -258,7 +438,7 @@ export default function Dashboard() {
                       <Cell key={index} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <RechartsTooltip />
                 </PieChart>
               </ResponsiveContainer>
             </Card>
