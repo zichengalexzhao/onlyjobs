@@ -253,36 +253,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Gmail integration functions
-  const connectGmail = async () => {
-    if (!currentUser) throw new Error('No user logged in');
-    
-    try {
-      // Configure Gmail provider with custom parameters
-      gmailProvider.setCustomParameters({
-        prompt: 'consent',
-        access_type: 'offline'
+const connectGmail = async () => {
+  if (!currentUser) throw new Error('No user logged in');
+
+  try {
+    // Configure Gmail provider with Gmail scopes and offline access
+    gmailProvider.setCustomParameters({
+      prompt: 'consent',
+      access_type: 'offline'
+    });
+    gmailProvider.addScope('https://www.googleapis.com/auth/gmail.readonly');
+    gmailProvider.addScope('https://www.googleapis.com/auth/gmail.labels');
+
+    const result = await signInWithPopup(auth, gmailProvider);
+
+    // Get Gmail access token
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    const token = credential?.accessToken;
+
+    if (token) {
+      // Store Gmail token separately for API calls
+      localStorage.setItem('gmail_access_token', token);
+      setIsGmailConnected(true);
+      console.log('Gmail connected successfully');
+
+      // 🔁 Send token + Firebase ID token to backend
+      const firebaseIdToken = await currentUser.getIdToken();
+
+      await fetch("https://us-central1-onlyjobs-465420.cloudfunctions.net/manage-tokens", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          firebase_id_token: firebaseIdToken,
+          gmail_access_token: token
+        })
       });
-      
-      const result = await signInWithPopup(auth, gmailProvider);
-      
-      // Get Gmail access token
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      const token = credential?.accessToken;
-      
-      if (token) {
-        // Store Gmail token separately for API calls
-        localStorage.setItem('gmail_access_token', token);
-        setIsGmailConnected(true);
-        console.log('Gmail connected successfully');
-      } else {
-        throw new Error('Failed to get Gmail access token');
-      }
-      
-    } catch (error) {
-      console.error('Gmail connection error:', error);
-      throw error;
+
+      console.log('Tokens sent to backend');
+    } else {
+      throw new Error('Failed to get Gmail access token');
     }
-  };
+
+  } catch (error) {
+    console.error('Gmail connection error:', error);
+    throw error;
+  }
+};
 
   const disconnectGmail = async () => {
     try {
