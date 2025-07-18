@@ -37,6 +37,7 @@ interface AuthContextType {
   // Gmail integration
   connectGmail: () => Promise<void>;
   disconnectGmail: () => Promise<void>;
+  checkGmailConnection: () => Promise<void>;
   isGmailConnected: boolean;
   getGmailToken: () => string | null;
   
@@ -69,17 +70,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
-      // Check if Gmail is connected when user changes
-      if (user) {
-        const gmailToken = localStorage.getItem('gmail_access_token');
-        setIsGmailConnected(!!gmailToken);
-      } else {
-        setIsGmailConnected(false);
-      }
     });
 
     return unsubscribe;
   }, []);
+
+  // Check Gmail connection status when user is authenticated
+  useEffect(() => {
+    const checkConnection = async () => {
+      if (currentUser) {
+        try {
+          const response = await fetch('https://manage-tokens-12002195951.us-central1.run.app/api/gmail/status', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${await currentUser.getIdToken()}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setIsGmailConnected(data.connected);
+            console.log('Gmail connection status:', data.connected);
+          } else {
+            setIsGmailConnected(false);
+          }
+        } catch (error) {
+          console.error('Error checking Gmail connection:', error);
+          setIsGmailConnected(false);
+        }
+      } else {
+        setIsGmailConnected(false);
+      }
+    };
+    
+    checkConnection();
+  }, [currentUser]);
 
   // Signup function
   const signup = async (email: string, password: string, displayName?: string) => {
@@ -304,13 +330,47 @@ const connectGmail = async () => {
 
   const disconnectGmail = async () => {
     try {
-      // Remove stored Gmail token
+      // Call backend to disconnect and clean up tokens
+      await fetch('https://manage-tokens-12002195951.us-central1.run.app/api/gmail/disconnect', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${await currentUser?.getIdToken()}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Remove stored Gmail token from local storage
       localStorage.removeItem('gmail_access_token');
       setIsGmailConnected(false);
-      console.log('Gmail disconnected');
+      console.log('Gmail disconnected successfully');
     } catch (error) {
       console.error('Gmail disconnection error:', error);
       throw error;
+    }
+  };
+
+  const checkGmailConnection = async () => {
+    try {
+      if (!currentUser) {
+        return;
+      }
+      
+      const response = await fetch('https://manage-tokens-12002195951.us-central1.run.app/api/gmail/status', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${await currentUser.getIdToken()}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setIsGmailConnected(data.connected);
+      } else {
+        setIsGmailConnected(false);
+      }
+    } catch (error) {
+      setIsGmailConnected(false);
     }
   };
 
@@ -334,6 +394,7 @@ const connectGmail = async () => {
     getIdTokenResult,
     connectGmail,
     disconnectGmail,
+    checkGmailConnection,
     isGmailConnected,
     getGmailToken,
     isEmailVerified: currentUser?.emailVerified || false,

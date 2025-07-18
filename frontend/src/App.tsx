@@ -15,6 +15,8 @@ const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const Settings = lazy(() => import('./pages/Settings'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const GmailCallback = lazy(() => import('./pages/GmailCallback'));
+const OAuthTest = lazy(() => import('./pages/OAuthTest'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function App() {
@@ -30,6 +32,8 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/callback" element={<GmailCallback />} />
+            <Route path="/oauth-test" element={<OAuthTest />} />
             
             {/* Semi-protected route (logged in but email not verified) */}
             <Route 

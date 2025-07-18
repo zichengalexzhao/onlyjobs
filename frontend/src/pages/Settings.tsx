@@ -37,14 +37,13 @@ const textColor = "#202020";
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { currentUser, updateUserProfile, logout, getIdToken } = useAuth();
+  const { currentUser, updateUserProfile, logout, getIdToken, isGmailConnected, checkGmailConnection } = useAuth();
   
   const [displayName, setDisplayName] = useState(currentUser?.displayName || "");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [isGmailConnected, setIsGmailConnected] = useState(false);
   const [fetchingToken, setFetchingToken] = useState(false);
   
   // Notification preferences
@@ -75,8 +74,10 @@ export default function Settings() {
     }
   };
 
-  const handleGmailConnectionChange = (connected: boolean) => {
-    setIsGmailConnected(connected);
+  const handleGmailConnectionChange = async (connected: boolean) => {
+    // Refresh Gmail connection status from backend
+    await checkGmailConnection();
+    
     if (connected) {
       setMessage("Gmail connected successfully! Your emails will now be processed for job application tracking.");
     } else {
@@ -243,6 +244,7 @@ export default function Settings() {
           <GmailConnection
             isConnected={isGmailConnected}
             onConnectionChange={handleGmailConnectionChange}
+            onGlobalRefresh={checkGmailConnection}
           />
         </Box>
 

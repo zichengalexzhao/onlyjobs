@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -33,14 +33,34 @@ const successColor = '#4caf50';
 interface GmailConnectionProps {
   isConnected: boolean;
   onConnectionChange: (connected: boolean) => void;
+  onGlobalRefresh?: () => Promise<void>;
 }
 
 export const GmailConnection: React.FC<GmailConnectionProps> = ({ 
-  isConnected, 
-  onConnectionChange 
+  isConnected: propIsConnected, 
+  onConnectionChange,
+  onGlobalRefresh
 }) => {
-  const { isConnecting, isSyncing, error, progress, connectGmail, disconnectGmail } = useGmailSync();
+  const { 
+    isConnecting, 
+    isSyncing, 
+    error, 
+    progress, 
+    isConnected: hookIsConnected, 
+    isCheckingStatus,
+    connectGmail, 
+    disconnectGmail, 
+    checkConnectionStatus 
+  } = useGmailSync();
   const [activeStep, setActiveStep] = useState(0);
+
+  // Use the hook's connection status, with fallback to prop
+  const isConnected = hookIsConnected || propIsConnected;
+
+  // Check connection status when component mounts
+  useEffect(() => {
+    checkConnectionStatus();
+  }, [checkConnectionStatus]);
 
   const steps = [
     {
@@ -64,6 +84,14 @@ export const GmailConnection: React.FC<GmailConnectionProps> = ({
     try {
       setActiveStep(0);
       await connectGmail();
+      // Recheck status after connection
+      await checkConnectionStatus();
+      
+      // Refresh global state
+      if (onGlobalRefresh) {
+        await onGlobalRefresh();
+      }
+      
       onConnectionChange(true);
     } catch (error) {
       console.error('Connection failed:', error);
@@ -75,12 +103,34 @@ export const GmailConnection: React.FC<GmailConnectionProps> = ({
   const handleDisconnect = async () => {
     try {
       await disconnectGmail();
+      // Recheck status after disconnection
+      await checkConnectionStatus();
+      
+      // Refresh global state
+      if (onGlobalRefresh) {
+        await onGlobalRefresh();
+      }
+      
       onConnectionChange(false);
       setActiveStep(0);
     } catch (error) {
       console.error('Disconnection failed:', error);
     }
   };
+
+  // Show loading state while checking connection status
+  if (isCheckingStatus) {
+    return (
+      <Card sx={{ bgcolor: white, borderRadius: 3, boxShadow: 1 }}>
+        <CardContent sx={{ p: 4, textAlign: 'center' }}>
+          <CircularProgress size={40} sx={{ color: accent, mb: 2 }} />
+          <Typography variant="body2" sx={{ color: '#666' }}>
+            Checking Gmail connection status...
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (isConnected) {
     return (

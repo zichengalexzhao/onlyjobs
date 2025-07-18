@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   CssBaseline,
@@ -6,7 +6,6 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Button,
   Avatar,
   Card,
   CardContent,
@@ -21,29 +20,23 @@ import {
   TableRow,
   TableCell,
   TableBody,
-  CircularProgress,
   Alert,
   Snackbar,
   Menu,
   MenuItem,
-  IconButton,
-  Tooltip
+  IconButton
 } from "@mui/material";
 import { 
   Home, 
   Assignment, 
   BarChart, 
   Person, 
-  Mail, 
-  Check, 
   Settings,
   AccountCircle,
   Logout,
-  KeyboardArrowDown,
-  Tune
+  KeyboardArrowDown
 } from "@mui/icons-material";
-import { useAuth, getAuthErrorMessage } from "../contexts/AuthContext";
-import { AuthError } from "firebase/auth";
+import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import {
   PieChart,
@@ -106,31 +99,18 @@ const sidebarItems = [
 ];
 
 export default function Dashboard() {
-  const { connectGmail, isGmailConnected, currentUser, logout } = useAuth();
+  const { currentUser, logout, checkGmailConnection } = useAuth();
   const navigate = useNavigate();
-  const [gmailLoading, setGmailLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" });
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
 
-  const handleGmailConnect = async () => {
-    try {
-      setGmailLoading(true);
-      await connectGmail();
-      setSnackbar({
-        open: true,
-        message: "Gmail connected successfully! Your emails will now be processed for job application tracking.",
-        severity: "success"
-      });
-    } catch (err) {
-      setSnackbar({
-        open: true,
-        message: getAuthErrorMessage(err as AuthError),
-        severity: "error"
-      });
-    } finally {
-      setGmailLoading(false);
+  // Refresh Gmail connection status when Dashboard loads
+  useEffect(() => {
+    if (currentUser) {
+      checkGmailConnection();
     }
-  };
+  }, [currentUser, checkGmailConnection]);
+
 
   const handleSnackbarClose = () => {
     setSnackbar({ ...snackbar, open: false });
@@ -220,35 +200,6 @@ export default function Dashboard() {
               Dashboard
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              {/* Gmail Connection Status with Quick Settings Access */}
-              <Tooltip title={isGmailConnected ? "Gmail connected - Click to manage" : "Connect Gmail to sync job emails"}>
-                <Button 
-                  variant="contained" 
-                  onClick={isGmailConnected ? handleNavigateToSettings : handleGmailConnect}
-                  disabled={gmailLoading}
-                  startIcon={
-                    gmailLoading ? <CircularProgress size={20} color="inherit" /> : 
-                    isGmailConnected ? <Check /> : <Mail />
-                  }
-                  endIcon={isGmailConnected ? <Tune sx={{ fontSize: 16 }} /> : null}
-                  sx={{ 
-                    background: isGmailConnected ? "#4caf50" : accent, 
-                    borderRadius: 2, 
-                    boxShadow: "none", 
-                    textTransform: "none",
-                    "&:hover": {
-                      background: isGmailConnected ? "#388e3c" : accent,
-                    },
-                    "&:disabled": {
-                      background: "#ccc",
-                      color: "white"
-                    }
-                  }}
-                >
-                  {gmailLoading ? "Connecting..." : isGmailConnected ? "Gmail Connected" : "Connect Gmail"}
-                </Button>
-              </Tooltip>
-
               {/* User Profile Dropdown */}
               <Box sx={{ display: "flex", alignItems: "center" }}>
                 <IconButton
@@ -329,59 +280,6 @@ export default function Dashboard() {
           ))}
         </Box>
 
-        {/* Gmail Connection Status Banner */}
-        {!isGmailConnected && (
-          <Card sx={{ 
-            mb: 3, 
-            bgcolor: "#fff3e0", 
-            borderRadius: 3, 
-            boxShadow: "none",
-            border: "1px solid #ffcc02"
-          }}>
-            <CardContent sx={{ py: 2 }}>
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Mail sx={{ color: "#f57c00" }} />
-                  <Box>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: textColor }}>
-                      Gmail Not Connected
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "#666" }}>
-                      Connect your Gmail to automatically track job application emails
-                    </Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={handleGmailConnect}
-                    disabled={gmailLoading}
-                    sx={{
-                      bgcolor: "#f57c00",
-                      textTransform: "none",
-                      "&:hover": { bgcolor: "#ef6c00" }
-                    }}
-                  >
-                    Connect Now
-                  </Button>
-                  <Button
-                    variant="text"
-                    size="small"
-                    onClick={handleNavigateToSettings}
-                    sx={{
-                      color: "#f57c00",
-                      textTransform: "none",
-                      "&:hover": { bgcolor: "rgba(245, 124, 0, 0.04)" }
-                    }}
-                  >
-                    Settings
-                  </Button>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Main Content Area */}
         <Box sx={{ display: "flex", gap: 3 }}>

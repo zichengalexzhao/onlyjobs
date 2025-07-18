@@ -109,10 +109,74 @@ def callback():
         # For GET request from OAuth redirect, no Firebase token required
         if request.method == "GET":
             code = request.args.get("code")
+            error = request.args.get("error")
+            state = request.args.get("state")
+            
+            if error:
+                print(f"❌ OAuth error: {error}")
+                frontend_url = get_secret("FRONTEND_REDIRECT_URL") if os.getenv("FRONTEND_REDIRECT_URL") else "http://localhost:3000/callback"
+                return f'<script>window.location.href="{frontend_url}?error={error}";</script>', 400
+            
             if not code:
-                return jsonify({"error": "Missing auth code in redirect"}), 400
+                print("❌ No authorization code in redirect")
+                frontend_url = get_secret("FRONTEND_REDIRECT_URL") if os.getenv("FRONTEND_REDIRECT_URL") else "http://localhost:3000/callback"
+                return f'<script>window.location.href="{frontend_url}?error=missing_code";</script>', 400
+            
             print(f"🔑 Authorization code received: {code}")
-            return jsonify({"code": code, "status": "received"}), 200  # Return code for manual use
+            
+            # Extract UID from state parameter (we'll need to modify auth URL generation to include this)
+            # For now, we'll need a different approach since we don't have the UID
+            # Let's redirect to frontend with a special token that frontend can use
+            
+            try:
+                # Exchange code for tokens immediately
+                flow = Flow.from_client_config(
+                    {
+                        "web": {
+                            "client_id": CLIENT_ID,
+                            "client_secret": CLIENT_SECRET,
+                            "redirect_uris": [REDIRECT_URI],
+                            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                            "token_uri": "https://oauth2.googleapis.com/token",
+                        }
+                    },
+                    scopes=SCOPES
+                )
+                flow.redirect_uri = REDIRECT_URI
+                flow.fetch_token(code=code)
+                creds = flow.credentials
+                
+                # We need the UID to store tokens, but we don't have it in the callback
+                # Let's create a temporary token storage and redirect to frontend with a temp ID
+                import uuid
+                temp_id = str(uuid.uuid4())
+                
+                # Store tokens temporarily with temp_id (expires in 30 minutes)
+                import datetime
+                expiry_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
+                
+                firestore_client.collection("temp-tokens").document(temp_id).set({
+                    "token": creds.token,
+                    "refresh_token": creds.refresh_token,
+                    "token_uri": creds.token_uri,
+                    "client_id": creds.client_id,
+                    "client_secret": creds.client_secret,
+                    "scopes": creds.scopes,
+                    "created_at": firestore.SERVER_TIMESTAMP,
+                    "expires_at": expiry_time
+                })
+                print(f"📦 Tokens stored temporarily with ID: {temp_id}")
+                
+                # Redirect to frontend with temp_id
+                frontend_url = get_secret("FRONTEND_REDIRECT_URL") if os.getenv("FRONTEND_REDIRECT_URL") else "http://localhost:3000/callback"
+                redirect_url = f"{frontend_url}?temp_token_id={temp_id}&status=success"
+                print(f"🔀 Redirecting to frontend: {redirect_url}")
+                return f'<script>window.location.href="{redirect_url}";</script>', 200
+                
+            except Exception as e:
+                print(f"❌ Error exchanging code for tokens: {str(e)}")
+                frontend_url = get_secret("FRONTEND_REDIRECT_URL") if os.getenv("FRONTEND_REDIRECT_URL") else "http://localhost:3000/callback"
+                return f'<script>window.location.href="{frontend_url}?error={str(e)}";</script>', 500
 
         # For POST request (e.g., manual testing with code), require Firebase token
         get_firebase_app()  # Ensure Firebase is initialized
@@ -152,12 +216,106 @@ def callback():
         print(f"❌ Error in /callback: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api/gmail/disconnect", methods=["POST"])
+@app.route("/api/gmail/finalize-tokens", methods=["POST"])
+def finalize_tokens():
+    try:
+        get_firebase_app()
+        uid = verify_firebase_token(request)
+        temp_token_id = request.json.get("temp_token_id")
+        
+        if not temp_token_id:
+            return jsonify({"error": "Missing temp_token_id"}), 400
+        
+        # Get tokens from temporary storage
+        temp_doc = firestore_client.collection("temp-tokens").document(temp_token_id).get()
+        if not temp_doc.exists:
+            print(f"❌ Temporary tokens not found for ID: {temp_token_id}")
+            return jsonify({"error": "Temporary tokens not found or expired"}), 404
+        
+        temp_data = temp_doc.to_dict()
+        
+        # Check if tokens have expired
+        import datetime
+        if "expires_at" in temp_data:
+            expires_at = temp_data["expires_at"]
+            # Convert Firestore timestamp to datetime if needed
+            if hasattr(expires_at, 'timestamp'):
+                expires_at = expires_at.replace(tzinfo=None)  # Make timezone naive
+            current_time = datetime.datetime.utcnow()
+            if current_time > expires_at:
+                print(f"❌ Temporary tokens expired for ID: {temp_token_id}")
+                # Clean up expired tokens
+                firestore_client.collection("temp-tokens").document(temp_token_id).delete()
+                return jsonify({"error": "Temporary tokens have expired. Please try connecting again."}), 410
+        
+        print(f"✅ Temporary tokens found and valid for ID: {temp_token_id}")
+        
+        # Move tokens to permanent storage
+        firestore_client.collection("emails-firestore").document(uid).set({
+            "token": temp_data["token"],
+            "refresh_token": temp_data["refresh_token"],
+            "token_uri": temp_data["token_uri"],
+            "client_id": temp_data["client_id"],
+            "client_secret": temp_data["client_secret"],
+            "scopes": temp_data["scopes"],
+        })
+        
+        # Delete temporary tokens
+        firestore_client.collection("temp-tokens").document(temp_token_id).delete()
+        
+        print(f"📬 Tokens finalized and stored in Firestore for {uid}")
+        return jsonify({"status": "success"})
+        
+    except Exception as e:
+        print(f"❌ Error in /finalize-tokens: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/gmail/status", methods=["GET"])
+def gmail_status():
+    try:
+        get_firebase_app()
+        uid = verify_firebase_token(request)
+        
+        # Check if user has tokens stored
+        doc = firestore_client.collection("emails-firestore").document(uid).get()
+        if doc.exists:
+            # Try to get user email from tokens (basic validation)
+            return jsonify({"connected": True})
+        else:
+            return jsonify({"connected": False})
+            
+    except Exception as e:
+        print(f"❌ Error in /gmail/status: {str(e)}")
+        return jsonify({"connected": False})
+
+@app.route("/api/gmail/disconnect", methods=["DELETE"])
 def disconnect():
     try:
         get_firebase_app()
         uid = verify_firebase_token(request)
+        
+        # Delete permanent tokens
         firestore_client.collection("emails-firestore").document(uid).delete()
+        
+        # Clean up any temporary tokens that might exist for this user
+        # Note: This is a cleanup measure, though temp tokens aren't tied to UID
+        temp_tokens = firestore_client.collection("temp-tokens").get()
+        for doc in temp_tokens:
+            try:
+                # Delete old temporary tokens (older than 1 hour as cleanup)
+                import datetime
+                doc_data = doc.to_dict()
+                if "created_at" in doc_data:
+                    created_at = doc_data["created_at"]
+                    if hasattr(created_at, 'timestamp'):
+                        created_at = created_at.replace(tzinfo=None)
+                    current_time = datetime.datetime.utcnow()
+                    if current_time - created_at > datetime.timedelta(hours=1):
+                        firestore_client.collection("temp-tokens").document(doc.id).delete()
+                        print(f"🧹 Cleaned up old temporary token: {doc.id}")
+            except Exception as cleanup_error:
+                print(f"⚠️ Error cleaning temp token {doc.id}: {cleanup_error}")
+        
         print(f"🔌 Disconnected Gmail for {uid}")
         return jsonify({"status": "disconnected"})
     except Exception as e:
