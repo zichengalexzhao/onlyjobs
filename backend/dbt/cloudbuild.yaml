@@ -1,10 +1,21 @@
+# backend/dbt/cloudbuild.yaml
 steps:
-  - name: python:3.9-slim
+  - id: "Install dbt"
+    name: "python:3.9-slim"
     entrypoint: bash
     args:
-      - -c
+      - "-c"
       - |
         pip install dbt-bigquery
-        cd backend/dbt
-        dbt run --profiles-dir . --target dev --select app_dashboard_metrics
-timeout: 600s
+
+  - id: "Run dbt"
+    name: "python:3.9-slim"
+    entrypoint: bash
+    # Since this file is in backend/dbt/, the workspace root is onlyjobs/,
+    # but Cloud Build will chdir into the folder containing your cloudbuild.yaml,
+    # so "." here is backend/dbt/
+    dir: "."  
+    args:
+      - "-c"
+      - |
+        dbt run --profiles-dir . --target dev
