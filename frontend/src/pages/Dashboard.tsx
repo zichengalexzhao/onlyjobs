@@ -99,17 +99,30 @@ const sidebarItems = [
 ];
 
 export default function Dashboard() {
-  const { currentUser, logout, checkGmailConnection } = useAuth();
+  const { currentUser, logout, checkGmailConnection, syncIncremental, isGmailConnected } = useAuth();
   const navigate = useNavigate();
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" });
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
 
-  // Refresh Gmail connection status when Dashboard loads
+  // Refresh Gmail connection status and sync when Dashboard loads
   useEffect(() => {
     if (currentUser) {
       checkGmailConnection();
+      
+      // Trigger incremental sync if Gmail is connected
+      if (isGmailConnected) {
+        syncIncremental(currentUser).catch(error => {
+          console.error('Dashboard incremental sync failed:', error);
+          // Show error in snackbar but don't block UI
+          setSnackbar({
+            open: true,
+            message: 'Failed to sync emails',
+            severity: 'error'
+          });
+        });
+      }
     }
-  }, [currentUser, checkGmailConnection]);
+  }, [currentUser, checkGmailConnection, isGmailConnected, syncIncremental]);
 
 
   const handleSnackbarClose = () => {

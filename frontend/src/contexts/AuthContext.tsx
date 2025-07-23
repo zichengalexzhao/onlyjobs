@@ -13,6 +13,7 @@ import {
   AuthError
 } from 'firebase/auth';
 import { auth, googleProvider, appleProvider, gmailProvider } from '../config/firebase';
+import { gmailFetchService } from '../services/gmailFetch.service';
 
 // Types
 interface AuthContextType {
@@ -40,6 +41,10 @@ interface AuthContextType {
   checkGmailConnection: () => Promise<void>;
   isGmailConnected: boolean;
   getGmailToken: () => string | null;
+  
+  // Gmail fetch integration
+  onGmailConnected: (user: User) => Promise<void>;
+  syncIncremental: (user: User) => Promise<void>;
   
   // User state
   isEmailVerified: boolean;
@@ -318,6 +323,10 @@ const connectGmail = async () => {
       });
 
       console.log('Tokens sent to backend');
+      
+      // Trigger backfill after successful connection
+      await onGmailConnected(currentUser);
+      
     } else {
       throw new Error('Failed to get Gmail access token');
     }
@@ -378,6 +387,37 @@ const connectGmail = async () => {
     return localStorage.getItem('gmail_access_token');
   };
 
+  // Gmail fetch integration functions
+  const onGmailConnected = async (user: User) => {
+    try {
+      const uid = user.uid;
+      console.log('🔄 Triggering Gmail backfill for user:', uid);
+      
+      // Trigger backfill to fetch up to 200 historical emails
+      await gmailFetchService.triggerBackfill(uid);
+      console.log('✅ Gmail backfill completed successfully');
+      
+    } catch (error) {
+      console.error('❌ Gmail backfill failed:', error);
+      throw error;
+    }
+  };
+
+  const syncIncremental = async (user: User) => {
+    try {
+      const uid = user.uid;
+      console.log('🔄 Triggering Gmail incremental sync for user:', uid);
+      
+      // Fetch the latest 10 new emails since last sync
+      await gmailFetchService.triggerIncremental(uid);
+      console.log('✅ Gmail incremental sync completed successfully');
+      
+    } catch (error) {
+      console.error('❌ Gmail incremental sync failed:', error);
+      throw error;
+    }
+  };
+
   // Context value
   const value: AuthContextType = {
     currentUser,
@@ -397,6 +437,8 @@ const connectGmail = async () => {
     checkGmailConnection,
     isGmailConnected,
     getGmailToken,
+    onGmailConnected,
+    syncIncremental,
     isEmailVerified: currentUser?.emailVerified || false,
     isNewUser
   };

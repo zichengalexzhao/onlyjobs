@@ -12,18 +12,17 @@ import {
   StepLabel,
   StepContent,
   Chip,
-  LinearProgress,
 } from '@mui/material';
 import {
   Mail,
   CheckCircle,
-  Sync,
   Security,
   CloudSync,
   Link,
   LinkOff,
 } from '@mui/icons-material';
 import { useGmailSync } from '../hooks/useGmailSync';
+import { SyncNowButton } from './SyncNowButton';
 
 const accent = '#FF7043';
 const white = '#fff';
@@ -36,6 +35,7 @@ interface GmailConnectionProps {
   onGlobalRefresh?: () => Promise<void>;
 }
 
+
 export const GmailConnection: React.FC<GmailConnectionProps> = ({ 
   isConnected: propIsConnected, 
   onConnectionChange,
@@ -43,9 +43,7 @@ export const GmailConnection: React.FC<GmailConnectionProps> = ({
 }) => {
   const { 
     isConnecting, 
-    isSyncing, 
     error, 
-    progress, 
     isConnected: hookIsConnected, 
     isCheckingStatus,
     connectGmail, 
@@ -53,6 +51,7 @@ export const GmailConnection: React.FC<GmailConnectionProps> = ({
     checkConnectionStatus 
   } = useGmailSync();
   const [activeStep, setActiveStep] = useState(0);
+  const [syncFeedback, setSyncFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Use the hook's connection status, with fallback to prop
   const isConnected = hookIsConnected || propIsConnected;
@@ -118,6 +117,16 @@ export const GmailConnection: React.FC<GmailConnectionProps> = ({
     }
   };
 
+  const handleSyncComplete = () => {
+    setSyncFeedback({ message: 'Emails synced successfully!', type: 'success' });
+    setTimeout(() => setSyncFeedback(null), 5000);
+  };
+
+  const handleSyncError = (error: string) => {
+    setSyncFeedback({ message: `Sync failed: ${error}`, type: 'error' });
+    setTimeout(() => setSyncFeedback(null), 5000);
+  };
+
   // Show loading state while checking connection status
   if (isCheckingStatus) {
     return (
@@ -157,46 +166,40 @@ export const GmailConnection: React.FC<GmailConnectionProps> = ({
             Your Gmail account is connected and syncing job application emails automatically.
           </Typography>
 
-          {isSyncing && (
-            <Box sx={{ mb: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Sync sx={{ color: accent, mr: 1, fontSize: 20 }} />
-                <Typography variant="body2" sx={{ color: textColor }}>
-                  Syncing emails... {progress}%
-                </Typography>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={progress}
-                sx={{
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: `${accent}20`,
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: accent,
-                  },
-                }}
-              />
-            </Box>
+          {/* Sync progress is now handled by individual sync operations */}
+
+          {syncFeedback && (
+            <Alert 
+              severity={syncFeedback.type} 
+              sx={{ mb: 2, borderRadius: 2 }}
+            >
+              {syncFeedback.message}
+            </Alert>
           )}
 
-          <Button
-            variant="outlined"
-            onClick={handleDisconnect}
-            startIcon={<LinkOff />}
-            sx={{
-              borderColor: '#d32f2f',
-              color: '#d32f2f',
-              borderRadius: 2,
-              textTransform: 'none',
-              '&:hover': {
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <SyncNowButton 
+              onSyncComplete={handleSyncComplete}
+              onSyncError={handleSyncError}
+            />
+            <Button
+              variant="outlined"
+              onClick={handleDisconnect}
+              startIcon={<LinkOff />}
+              sx={{
                 borderColor: '#d32f2f',
-                backgroundColor: '#ffebee',
-              },
-            }}
-          >
-            Disconnect Gmail
-          </Button>
+                color: '#d32f2f',
+                borderRadius: 2,
+                textTransform: 'none',
+                '&:hover': {
+                  borderColor: '#d32f2f',
+                  backgroundColor: '#ffebee',
+                },
+              }}
+            >
+              Disconnect Gmail
+            </Button>
+          </Box>
         </CardContent>
       </Card>
     );

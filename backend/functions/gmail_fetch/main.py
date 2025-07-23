@@ -2,6 +2,7 @@ import os
 import json
 import time
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from google.cloud import firestore, pubsub_v1
 from google.oauth2.credentials import Credentials
 import google.auth.transport.requests
@@ -9,6 +10,14 @@ import requests
 from google.cloud.pubsub_v1 import PublisherClient
 
 app = Flask(__name__)
+
+# Configure CORS to allow requests from frontend
+CORS(app, origins=[
+    "http://localhost:3000",  # Local development
+    "https://onlyjobs-465420.web.app",  # Firebase hosting (if used)
+    "https://onlyjobs-465420.firebaseapp.com"  # Firebase hosting (if used)
+])
+
 print("🚀 Starting gmail-fetch app...")
 
 PROJECT_ID = "onlyjobs-465420"

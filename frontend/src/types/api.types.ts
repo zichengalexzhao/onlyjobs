@@ -28,7 +28,9 @@ export interface ApiResponse<T> {
   }
   
   export interface GmailSyncRequest {
-    userId: string;
+    userId?: string;
+    uid?: string;
+    backfill?: boolean;
     syncHours?: number;
   }
   
