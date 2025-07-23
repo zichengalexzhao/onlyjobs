@@ -1,4 +1,7 @@
 # backend/dbt/cloudbuild.yaml
+options:
+  logging: CLOUD_LOGGING_ONLY
+
 steps:
 - id: "Install dbt"
   name: "python:3.9-slim"
