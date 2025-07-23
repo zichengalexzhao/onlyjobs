@@ -1,0 +1,17 @@
+name: 'dbt_onlyjobs'
+version: '1.0'
+config-version: 2
+
+# This should match the profile in your ~/.dbt/profiles.yml
+profile: 'dbt-onlyjobs'
+
+# Where your model SQL files live
+model-paths: ['models']
+
+# Where dbt builds compiled artifacts
+target-path: 'target'
+
+# Directories to clean
+clean-targets:
+  - 'target'
+  - 'dbt_modules'

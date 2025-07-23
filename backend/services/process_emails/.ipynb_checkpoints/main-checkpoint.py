@@ -1,11 +1,11 @@
-#process_emails/main.py
+# process_emails/main.py
 
 import os
 import json
 import base64
 from flask import Flask, request, jsonify
-from datetime import datetime, date
-from google.cloud import bigquery, firestore
+from datetime import datetime
+from google.cloud import bigquery, firestore, pubsub_v1
 import uuid
 
 from config import PROJECT_ID, LOCATION
@@ -21,12 +21,17 @@ LOCATION = get_env("LOCATION", "us-central1")
 BQ_DATASET_ID = get_env("BQ_DATASET_ID", "user_data")
 BQ_RAW_TABLE_ID = get_env("BQ_RAW_TABLE_ID", "job_applications")
 FIRESTORE_DATABASE_ID = get_env("FIRESTORE_DATABASE_ID", "emails-firestore")
+PUBSUB_TOPIC = get_env("PUBSUB_TOPIC", "applications-ready-topic")
 
 print(f"[DEBUG] Initializing BigQuery client for project: {PROJECT_ID}")
 bigquery_client = bigquery.Client(project=PROJECT_ID)
 
 print(f"[DEBUG] Initializing Firestore client for project: {PROJECT_ID}, database: {FIRESTORE_DATABASE_ID}")
 firestore_client = firestore.Client(project=PROJECT_ID, database=FIRESTORE_DATABASE_ID)
+
+print(f"[DEBUG] Initializing Pub/Sub publisher for topic: {PUBSUB_TOPIC}")
+publisher = pubsub_v1.PublisherClient()
+topic_path = publisher.topic_path(PROJECT_ID, PUBSUB_TOPIC)
 
 app = Flask(__name__)
 app.debug = True
@@ -89,7 +94,10 @@ def save_results_to_bigquery(rows):
 def save_results_to_firestore(data_dict, user_id, email_id):
     print(f"[DEBUG] Saving to Firestore for user {user_id}, email {email_id}")
     try:
-        doc_ref = firestore_client.collection('users').document(user_id).collection('job_applications').document(email_id)
+        doc_ref = firestore_client.collection('users') \
+            .document(user_id) \
+            .collection('job_applications') \
+            .document(email_id)
         doc_ref.set(data_dict)
         print(f"✅ Saved email {email_id} for user {user_id} to Firestore.")
     except Exception as e:
@@ -99,17 +107,13 @@ def save_results_to_firestore(data_dict, user_id, email_id):
 def index():
     print("[DEBUG] Received request")
     envelope = request.get_json()
-    if not envelope:
-        print("[ERROR] No Pub/Sub message received.")
-        return 'No Pub/Sub message received', 400
-
-    if not isinstance(envelope, dict) or 'message' not in envelope:
-        print("[ERROR] Invalid Pub/Sub message format. Missing 'message' field.")
-        return 'Invalid Pub/Sub message format', 400
+    if not envelope or 'message' not in envelope:
+        print("[ERROR] Invalid Pub/Sub message.")
+        return 'Invalid Pub/Sub message', 400
 
     message = envelope['message']
     if 'data' not in message:
-        print("[ERROR] No 'data' field in Pub/Sub message.")
+        print("[ERROR] No data in Pub/Sub message.")
         return 'No data in message', 400
 
     try:
@@ -123,48 +127,61 @@ def index():
         return 'Invalid JSON payload', 400
 
     if not email_content or not user_id:
-        print(f"[ERROR] Missing email_content or user_id. user_id: {user_id}, email_content length: {len(email_content) if email_content else 'None'}")
+        print(f"[ERROR] Missing email_content or user_id.")
         return 'Missing email_content or user_id', 400
 
     email_id = email_payload.get('email_id', f"local-{uuid.uuid4()}")
     print(f"[DEBUG] Processing email for user: {user_id}, email_id: {email_id}")
 
     classification_result = classify_email(email_content)
-    print(f"[DEBUG] Classification result:\n{classification_result}")
-
     if "not job application" in classification_result.lower():
         print(f"[DEBUG] Email {email_id} skipped (not job application).")
         return 'Email classified as not job application', 200
 
     details = parse_classification_details(classification_result)
-    details["email_id"] = email_id
-    details["user_id"] = user_id
-    details["inserted_at"] = datetime.utcnow().isoformat()
-    details["email_date"] = normalize_email_date(email_payload.get("email_date", datetime.utcnow().isoformat()))
+    details.update({
+        "email_id": email_id,
+        "user_id": user_id,
+        "inserted_at": datetime.utcnow().isoformat(),
+        "email_date": normalize_email_date(email_payload.get("email_date", datetime.utcnow().isoformat()))
+    })
 
     bq_row = {
-        "user_id": details.get("user_id"),
-        "email_id": details.get("email_id"),
-        "company": details.get("Company"),
-        "job_title": details.get("Job Title"),
-        "location": details.get("Location"),
-        "status": details.get("status"),
-        "inserted_at": details.get("inserted_at"),
-        "email_date": details.get("email_date"),
+        "user_id": details["user_id"],
+        "email_id": details["email_id"],
+        "company": details["Company"],
+        "job_title": details["Job Title"],
+        "location": details["Location"],
+        "status": details["status"],
+        "inserted_at": details["inserted_at"],
+        "email_date": details["email_date"],
         "raw_email_content": email_content
     }
     save_results_to_bigquery([bq_row])
 
     firestore_data = {
-        "company": details.get("Company"),
-        "job_title": details.get("Job Title"),
-        "location": details.get("Location"),
-        "status": details.get("status"),
-        "inserted_at": details.get("inserted_at"),
-        "email_date": details.get("email_date"),
+        "company": details["Company"],
+        "job_title": details["Job Title"],
+        "location": details["Location"],
+        "status": details["status"],
+        "inserted_at": details["inserted_at"],
+        "email_date": details["email_date"],
         "raw_email_content_snippet": email_content[:500]
     }
     save_results_to_firestore(firestore_data, user_id, email_id)
+
+    # --- NEW: signal dbt trigger that a batch is ready ---
+    batch_event = {
+        "batch_id": str(uuid.uuid4()),
+        "timestamp": datetime.utcnow().isoformat(),
+        "email_id": email_id
+    }
+    publisher.publish(
+        topic_path,
+        json.dumps(batch_event).encode("utf-8"),
+        content_type="batch-ready"
+    )
+    print(f"[DEBUG] Published batch-ready event for email_id={email_id}")
 
     return 'Email processed successfully', 200
 

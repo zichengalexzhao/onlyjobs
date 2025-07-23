@@ -1,0 +1,9 @@
+version: 2
+
+models:
+  - name: app_dashboard_metrics
+    tests:
+      - unique:
+          column_name: status
+      - not_null:
+          column_name: status
