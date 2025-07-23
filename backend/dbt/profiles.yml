@@ -1,0 +1,9 @@
+dbt-onlyjobs:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth           # use ADC
+      project: onlyjobs-465420
+      dataset: dbt_analytics
+      threads: 4
