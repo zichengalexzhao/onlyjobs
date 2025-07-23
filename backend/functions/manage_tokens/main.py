@@ -1,3 +1,4 @@
+#manage_tokens
 import os
 import json
 from flask import Flask, request, jsonify
@@ -202,7 +203,7 @@ def callback():
         creds = flow.credentials
 
         # Store tokens in Firestore
-        firestore_client.collection("emails-firestore").document(uid).set({
+        firestore_client.collection("gmail_auth").document(uid).set({
             "token": creds.token,
             "refresh_token": creds.refresh_token,
             "token_uri": creds.token_uri,
@@ -251,7 +252,7 @@ def finalize_tokens():
         print(f"✅ Temporary tokens found and valid for ID: {temp_token_id}")
         
         # Move tokens to permanent storage
-        firestore_client.collection("emails-firestore").document(uid).set({
+        firestore_client.collection("gmail_auth").document(uid).set({
             "token": temp_data["token"],
             "refresh_token": temp_data["refresh_token"],
             "token_uri": temp_data["token_uri"],
@@ -277,7 +278,7 @@ def gmail_status():
         uid = verify_firebase_token(request)
         
         # Check if user has tokens stored
-        doc = firestore_client.collection("emails-firestore").document(uid).get()
+        doc = firestore_client.collection("gmail_auth").document(uid).get()
         if doc.exists:
             # Try to get user email from tokens (basic validation)
             return jsonify({"connected": True})
@@ -295,7 +296,7 @@ def disconnect():
         uid = verify_firebase_token(request)
         
         # Delete permanent tokens
-        firestore_client.collection("emails-firestore").document(uid).delete()
+        firestore_client.collection("gmail_auth").document(uid).delete()
         
         # Clean up any temporary tokens that might exist for this user
         # Note: This is a cleanup measure, though temp tokens aren't tied to UID

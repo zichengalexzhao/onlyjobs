@@ -12,7 +12,7 @@ import os # Added for config import
 # For Cloud Run, you'd typically pass these as environment variables or rely on Application Default Credentials.
 # For simplicity, let's assume direct import for now, or use os.environ.get for env vars
 # --- FIX APPLIED HERE ---
-from backend.config import PROJECT_ID, LOCATION # Corrected import to find config.py from project root
+from config import PROJECT_ID, LOCATION # Corrected import to find config.py from project root
 
 # Initialize Vertex AI — Gemini models must use a supported region like us-central1
 vertexai.init(project=PROJECT_ID, location=LOCATION) # Use config variables
