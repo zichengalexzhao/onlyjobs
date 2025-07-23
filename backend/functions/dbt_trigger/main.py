@@ -12,22 +12,33 @@ def run_dbt(event, context):
     # event['data'] is base64-encoded message; you can decode if needed.
     cb = build("cloudbuild", "v1", cache_discovery=False)
     build_body = {
+        # 1) Clone your repo from Cloud Source Repos
+        "source": {
+            "repoSource": {
+                "projectId": PROJECT_ID,
+                "repoName":   "onlyjobs",  # your CSR repo name
+                "branchName": "main",      # branch where your dbt lives
+            }
+        },
+        # 2) Run the DBT build steps
         "steps": [
-          {
-            "name": "python:3.9-slim",
-            "entrypoint": "bash",
-            "args": [
-              "-c",
-              f"pip install dbt-bigquery && "
-              f"cd {DBT_DIR} && "
-              f"dbt run --profiles-dir . --target {DBT_TARGET} --select app_dashboard_metrics"
-            ]
-          }
+            {
+                "name":       "python:3.9-slim",
+                "entrypoint": "bash",
+                "args": [
+                    "-c",
+                    "pip install dbt-bigquery && "
+                    f"cd {DBT_DIR} && "
+                    f"dbt run --profiles-dir . --target {DBT_TARGET} --select app_dashboard_metrics"
+                ]
+            }
         ],
         "timeout": "600s"
     }
+
     resp = cb.projects().builds().create(
         projectId=PROJECT_ID,
         body=build_body
     ).execute()
+
     print(f"🔔 Triggered Cloud Build: {resp['metadata']['build']['id']}")
