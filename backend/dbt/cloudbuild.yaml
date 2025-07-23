@@ -12,11 +12,11 @@ steps:
       pip install dbt-bigquery
 
 - id: "Run dbt"
-  name: "python:3.9-slim"
-  entrypoint: bash
-  dir: "."            # relative to where cloudbuild.yaml lives (backend/dbt/)
-  args:
-    - "-c"
-    - |
-      dbt run --profiles-dir . --target dev
-
+    name: "python:3.9-slim"
+    entrypoint: bash
+    dir: "."            # backend/dbt/
+    args:
+      - "-c"
+      - |
+        pip install dbt-bigquery && \
+        dbt run --profiles-dir . --target dev
