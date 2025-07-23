@@ -33,3 +33,4 @@ firebase-debug.log
 # GCP
 service-account-key.json
 credentials.json
+.ipynb_checkpoints/
