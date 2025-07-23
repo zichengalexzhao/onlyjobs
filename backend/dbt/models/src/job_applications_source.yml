@@ -1,0 +1,6 @@
+version: 2
+
+sources:
+  - name: user_data
+    tables:
+      - name: job_applications

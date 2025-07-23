@@ -1,0 +1,10 @@
+steps:
+  - name: python:3.9-slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        pip install dbt-bigquery
+        cd backend/dbt
+        dbt run --profiles-dir . --target dev --select app_dashboard_metrics
+timeout: 600s
