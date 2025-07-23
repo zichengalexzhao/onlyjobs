@@ -1,14 +1,18 @@
 # backend/dbt/cloudbuild.yaml
-steps:
-  - id: "run-dbt"
-    name: "python:3.9-slim"
-    entrypoint: "bash"
-    dir: "."              # relative to cloudbuild.yaml, so this is backend/dbt/
-    args:
-      - "-c"
-      - |
-        pip install dbt-bigquery && \
-        dbt run --profiles-dir . --target dev
-
 options:
   logging: CLOUD_LOGGING_ONLY
+
+steps:
+- id: "Install & run dbt"
+  name: "python:3.9-slim"
+  entrypoint: "bash"
+  args:
+    - "-c"
+    - |
+      # 1) install dbt
+      pip install dbt-bigquery && \
+      # 2) switch into your dbt folder (regardless of how Cloud Build clones it)
+      cd backend/dbt && \
+      # 3) run your models
+      dbt run --profiles-dir . --target dev
+timeout: "600s"
