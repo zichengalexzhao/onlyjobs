@@ -1,22 +1,14 @@
 # backend/dbt/cloudbuild.yaml
-options:
-  logging: CLOUD_LOGGING_ONLY
-
 steps:
-- id: "Install dbt"
-  name: "python:3.9-slim"
-  entrypoint: bash
-  args:
-    - "-c"
-    - |
-      pip install dbt-bigquery
-
-- id: "Run dbt"
+  - id: "run-dbt"
     name: "python:3.9-slim"
-    entrypoint: bash
-    dir: "."            # backend/dbt/
+    entrypoint: "bash"
+    dir: "."              # relative to cloudbuild.yaml, so this is backend/dbt/
     args:
       - "-c"
       - |
         pip install dbt-bigquery && \
         dbt run --profiles-dir . --target dev
+
+options:
+  logging: CLOUD_LOGGING_ONLY
