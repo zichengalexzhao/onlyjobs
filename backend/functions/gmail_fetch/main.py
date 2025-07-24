@@ -10,6 +10,7 @@ from google.cloud.pubsub_v1 import PublisherClient
 from google.oauth2.credentials import Credentials
 import google.auth.transport.requests
 import requests
+# from firebase_admin import auth, initialize_app, credentials
 
 app = Flask(__name__)
 CORS(app, origins=[
@@ -20,6 +21,9 @@ CORS(app, origins=[
 
 print("🚀 Starting gmail-fetch app…")
 
+# Initialize Firebase Admin SDK
+# initialize_app()
+
 PROJECT_ID            = "onlyjobs-465420"
 FIRESTORE_COLLECTION  = "gmail_auth"
 PUBSUB_TOPIC          = f"projects/{PROJECT_ID}/topics/new-emails-topic"
@@ -27,6 +31,20 @@ PUBSUB_TOPIC          = f"projects/{PROJECT_ID}/topics/new-emails-topic"
 # === Initialize Clients ===
 firestore_client = firestore.Client(project=PROJECT_ID)
 publisher        = PublisherClient()
+
+# === Authentication Helper ===
+def verify_firebase_token():
+    """Verify Firebase ID token from Authorization header"""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return None, "Missing or invalid Authorization header"
+    
+    token = auth_header.split('Bearer ')[1]
+    try:
+        decoded_token = auth.verify_id_token(token)
+        return decoded_token['uid'], None
+    except Exception as e:
+        return None, f"Invalid token: {str(e)}"
 
 
 def fetch_emails_for_user(uid, creds_dict, backfill=False, max_emails=500):
