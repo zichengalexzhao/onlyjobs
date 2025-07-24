@@ -1,159 +1,160 @@
-#gmail_fetch/main.py
+# gmail_fetch/main.py
 
 import os
 import json
 import time
 from flask import Flask, request, jsonify
-from google.cloud import firestore, pubsub_v1
+from flask_cors import CORS
+from google.cloud import firestore
+from google.cloud.pubsub_v1 import PublisherClient
 from google.oauth2.credentials import Credentials
 import google.auth.transport.requests
 import requests
-from google.cloud.pubsub_v1 import PublisherClient
 
 app = Flask(__name__)
-print("🚀 Starting gmail-fetch app...")
+CORS(app, origins=[
+    "http://localhost:3000",
+    "https://onlyjobs-465420.web.app",
+    "https://onlyjobs-465420.firebaseapp.com",
+])
 
-PROJECT_ID = "onlyjobs-465420"
-FIRESTORE_COLLECTION = "gmail_auth"
-PUBSUB_TOPIC = f"projects/{PROJECT_ID}/topics/new-emails-topic"
+print("🚀 Starting gmail-fetch app…")
+
+PROJECT_ID            = "onlyjobs-465420"
+FIRESTORE_COLLECTION  = "gmail_auth"
+PUBSUB_TOPIC          = f"projects/{PROJECT_ID}/topics/new-emails-topic"
 
 # === Initialize Clients ===
-try:
-    firestore_client = firestore.Client(project=PROJECT_ID)
-    print("✅ Firestore client initialized")
-except Exception as e:
-    print(f"❌ Firestore client failed to init: {e}")
-    raise
+firestore_client = firestore.Client(project=PROJECT_ID)
+publisher        = PublisherClient()
 
-try:
-    publisher = PublisherClient()
-    print("✅ Pub/Sub publisher initialized")
-except Exception as e:
-    print(f"❌ Pub/Sub publisher failed to init: {e}")
-    raise
 
-# === Fetch Emails for One User ===
 def fetch_emails_for_user(uid, creds_dict, backfill=False, max_emails=500):
     print(f"📩 Fetching emails for user: {uid}")
 
-    try:
-        creds = Credentials(
-            token=creds_dict["token"],
-            refresh_token=creds_dict["refresh_token"],
-            token_uri=creds_dict["token_uri"],
-            client_id=creds_dict["client_id"],
-            client_secret=creds_dict["client_secret"],
-            scopes=creds_dict["scopes"]
-        )
-        creds.refresh(google.auth.transport.requests.Request())
-    except Exception as e:
-        print(f"❌ Credential error for {uid}: {e}")
-        return
+    # build Credentials and refresh to get a valid access token
+    creds = Credentials(
+        token=creds_dict.get("token"),
+        refresh_token=creds_dict.get("refresh_token"),
+        token_uri=creds_dict.get("token_uri"),
+        client_id=creds_dict.get("client_id"),
+        client_secret=creds_dict.get("client_secret"),
+        scopes=creds_dict.get("scopes", []),
+    )
+    creds.refresh(google.auth.transport.requests.Request())
 
     headers = {"Authorization": f"Bearer {creds.token}"}
     list_url = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
+
+    # figure out how far we’ve already fetched
+    last_fetched_ms = creds_dict.get("last_fetched", 0)
+    after_secs      = int(last_fetched_ms / 1000)
+
     fetched = 0
     next_page_token = None
 
     while True:
-        try:
-            params = {"maxResults": 100 if backfill else 10, "labelIds": ["INBOX"]}
-            if backfill and next_page_token:
-                params["pageToken"] = next_page_token
+        params = {
+            "maxResults": 100 if backfill else 10,
+            "labelIds": ["INBOX"],
+        }
+        # only pull messages *after* our last fetch (unless backfill)
+        if not backfill and after_secs:
+            params["q"] = f"after:{after_secs}"
 
-            res = requests.get(list_url, headers=headers, params=params)
-            res.raise_for_status()
-            response_json = res.json()
+        if next_page_token:
+            params["pageToken"] = next_page_token
 
-            messages = response_json.get("messages", [])
-            next_page_token = response_json.get("nextPageToken")
-            print(f"📬 Retrieved {len(messages)} messages")
+        resp = requests.get(list_url, headers=headers, params=params)
+        resp.raise_for_status()
+        data = resp.json()
 
-            if not messages:
-                break
+        msgs = data.get("messages", [])
+        next_page_token = data.get("nextPageToken")
+        print(f"📬 Retrieved {len(msgs)} messages")
 
-            for msg in messages:
-                try:
-                    msg_id = msg["id"]
-                    detail_url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{msg_id}?format=full"
-                    msg_res = requests.get(detail_url, headers=headers)
-                    msg_res.raise_for_status()
-                    payload = msg_res.json()
-
-                    email_date = int(payload.get("internalDate", "0"))
-                    snippet = payload.get("snippet", "")
-
-                    pubsub_data = json.dumps({
-                        "user_id": uid,
-                        "email_id": msg_id,
-                        "email_content": snippet,
-                        "email_date": email_date
-                    }).encode("utf-8")
-
-                    future = publisher.publish(PUBSUB_TOPIC, data=pubsub_data)
-                    future.result()
-                    print(f"✅ Published email {msg_id}")
-                    fetched += 1
-
-                    time.sleep(0.2)
-
-                    if not backfill and fetched >= max_emails:
-                        break
-
-                except Exception as msg_err:
-                    print(f"⚠️ Error processing message {msg.get('id')}: {msg_err}")
-                    continue
-
-            if not backfill or not next_page_token or fetched >= max_emails:
-                break
-
-        except Exception as page_err:
-            print(f"❌ Error fetching email list: {page_err}")
+        if not msgs:
             break
 
-    try:
-        firestore_client.collection(FIRESTORE_COLLECTION).document(uid).update({
-            "last_fetched": int(time.time() * 1000)
-        })
-    except Exception as update_err:
-        print(f"⚠️ Failed to update last_fetched for {uid}: {update_err}")
+        for m in msgs:
+            msg_id = m["id"]
+            detail_url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{msg_id}?format=full"
+            dresp = requests.get(detail_url, headers=headers)
+            dresp.raise_for_status()
+            payload = dresp.json()
 
-# === Cloud Function Route ===
+            email_date = int(payload.get("internalDate", 0))
+            snippet    = payload.get("snippet", "")
+
+            pubsub_data = json.dumps({
+                "user_id":       uid,
+                "email_id":      msg_id,
+                "email_content": snippet,
+                "email_date":    email_date,
+            }).encode("utf-8")
+
+            publisher.publish(PUBSUB_TOPIC, data=pubsub_data).result()
+            print(f"✅ Published email {msg_id}")
+
+            fetched += 1
+            time.sleep(0.1)
+            if not backfill and fetched >= max_emails:
+                break
+
+        if not backfill or not next_page_token or fetched >= max_emails:
+            break
+
+    # update last_fetched so next run only gets newer messages
+    firestore_client.collection(FIRESTORE_COLLECTION).document(uid).update({
+        "last_fetched": int(time.time() * 1000)
+    })
+    print(f"🔄 Updated last_fetched for {uid}")
+
+    return fetched
+
+
 @app.route("/fetch", methods=["POST"])
 def fetch_all():
     print("📥 Received /fetch POST request")
     backfill = request.args.get("backfill", "false").lower() == "true"
-    print(f"🛠 Backfill mode: {backfill}")
+    explicit_uid = request.args.get("uid")
 
-    try:
-        users = firestore_client.collection(FIRESTORE_COLLECTION).stream()
-    except Exception as stream_err:
-        print(f"❌ Failed to stream Firestore users: {stream_err}")
-        return jsonify({"status": "error", "message": str(stream_err)}), 500
+    # choose which user docs to process
+    if explicit_uid:
+        docs = [firestore_client.collection(FIRESTORE_COLLECTION).document(explicit_uid).get()]
+    else:
+        docs = firestore_client.collection(FIRESTORE_COLLECTION).stream()
 
-    count = 0
-    for doc in users:
-        uid = doc.id
-        creds_dict = doc.to_dict()
+    processed_users = 0
+    for doc in docs:
+        if not doc.exists:
+            print(f"⚠️ No creds found for UID={doc.id}")
+            continue
 
-        if "token" not in creds_dict:
-            print(f"⚠️ Skipping {uid} — no token found")
+        creds = doc.to_dict()
+        if "token" not in creds:
+            print(f"⚠️ Skipping {doc.id} — no token field")
             continue
 
         try:
-            fetch_emails_for_user(uid, creds_dict, backfill=backfill)
-            count += 1
-        except Exception as user_err:
-            print(f"❌ Error fetching for {uid}: {user_err}")
+            fetched = fetch_emails_for_user(doc.id, creds, backfill=backfill)
+            if fetched:
+                processed_users += 1
+        except Exception as e:
+            print(f"❌ Error for {doc.id}: {e}")
 
-    print(f"✅ All done. Processed {count} user(s).")
-    return jsonify({"status": "complete", "users_processed": count, "backfill": backfill})
+    print(f"✅ Done. Processed {processed_users} user(s).")
+    return jsonify({
+        "status":          "complete",
+        "users_processed": processed_users,
+        "backfill":        backfill
+    })
 
-# === Health Check ===
+
 @app.route("/health", methods=["GET"])
 def health():
     return "OK", 200
 
-# === Local Run ===
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)
