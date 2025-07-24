@@ -406,14 +406,14 @@ const connectGmail = async () => {
   const syncIncremental = async (user: User) => {
     try {
       const uid = user.uid;
-      console.log('🔄 Triggering Gmail incremental sync for user:', uid);
+      console.log('🔄 Triggering Gmail backfill sync for user:', uid);
       
-      // Fetch the latest 10 new emails since last sync
-      await gmailFetchService.triggerIncremental(uid);
-      console.log('✅ Gmail incremental sync completed successfully');
+      // Fetch emails with backfill=true (up to 500 emails)
+      await gmailFetchService.triggerBackfill(uid);
+      console.log('✅ Gmail backfill sync completed successfully');
       
     } catch (error) {
-      console.error('❌ Gmail incremental sync failed:', error);
+      console.error('❌ Gmail backfill sync failed:', error);
       throw error;
     }
   };
