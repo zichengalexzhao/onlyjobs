@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import logo from "../company-logo.jpeg";
 import {
   Box,
   CssBaseline,
@@ -28,9 +29,6 @@ import {
 } from "@mui/material";
 import { 
   Home, 
-  Assignment, 
-  BarChart, 
-  Person, 
   Settings,
   AccountCircle,
   Logout,
@@ -92,9 +90,6 @@ const textColor = "#202020";
 // Sidebar items
 const sidebarItems = [
   { text: "Dashboard", icon: <Home />, active: true },
-  { text: "Applications", icon: <Assignment />, active: false },
-  { text: "Visualizations", icon: <BarChart />, active: false },
-  { text: "Profile", icon: <Person />, active: false },
   { text: "Settings", icon: <Settings />, active: false }
 ];
 
@@ -183,8 +178,16 @@ export default function Dashboard() {
         }}
       >
         <Toolbar sx={{ my: 2 }}>
-          <Box sx={{ fontWeight: 700, fontSize: 22, color: accent, ml: 1 }}>
-            <span role="img" aria-label="briefcase">💼</span> 
+          <Box sx={{ ml: 1, display: 'flex', alignItems: 'center' }}>
+            <img 
+              src={logo} 
+              alt="OnlyJobs Logo" 
+              style={{ 
+                height: '60px', 
+                width: 'auto',
+                maxWidth: '200px'
+              }} 
+            />
           </Box>
         </Toolbar>
         <Divider />
