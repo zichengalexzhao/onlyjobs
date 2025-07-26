@@ -33,8 +33,7 @@ graph TB
     F --> H[BigQuery Warehouse]
     F --> I[Firestore Database]
     I --> A
-    H --> J[dbt Transformations]
-    J --> K[Analytics Dashboard]
+    H --> J[Analytics Dashboard]
 ```
 
 ## 🚀 Quick Start
