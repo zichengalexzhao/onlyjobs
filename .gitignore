@@ -33,4 +33,10 @@ firebase-debug.log
 # GCP
 service-account-key.json
 credentials.json
+
+# Jupyter
 .ipynb_checkpoints/
+
+# dbt
+backend/dbt/target/
+backend/dbt/logs/

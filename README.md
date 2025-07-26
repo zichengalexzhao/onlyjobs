@@ -1,334 +1,231 @@
 # OnlyJobs - AI-Powered Job Application Tracker
 
-An intelligent job application tracking system that automatically syncs with Gmail, uses AI to classify and extract job application details, and provides real-time analytics through a modern web dashboard.
+> An intelligent job application tracking system that automatically syncs with Gmail, uses AI to classify and extract job application details, and provides real-time analytics through a modern web dashboard.
 
-## 🚀 Features
+[![Cloud Native](https://img.shields.io/badge/Cloud-Native-blue?logo=google-cloud)](https://cloud.google.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+[![Python](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python)](https://www.python.org/)
+[![AI Powered](https://img.shields.io/badge/AI-Vertex%20AI-4285F4?logo=google)](https://cloud.google.com/vertex-ai)
 
-- **🔐 Secure Authentication**: Firebase Auth with email verification
-- **📧 Gmail Integration**: Automatic email fetching and processing
-- **🤖 AI-Powered Classification**: Google Vertex AI (Gemini 2.5 Flash) for intelligent email analysis
-- **📊 Real-time Analytics**: BigQuery for data warehousing and dbt transformations
-- **⚡ Cloud-Native**: Fully deployed on Google Cloud Platform
-- **🔄 Event-Driven Architecture**: Pub/Sub for scalable email processing
-- **📱 Modern UI**: React with TypeScript and responsive design
+## ✨ Features
+
+- **🔐 Secure Authentication** - Firebase Auth with email verification and OAuth integration
+- **📧 Gmail Integration** - Automatic email fetching and intelligent job application detection
+- **🤖 AI-Powered Classification** - Google Vertex AI (Gemini 2.5 Flash) for intelligent email analysis
+- **📊 Real-time Analytics** - Live dashboard with interactive charts and metrics
+- **⚡ Cloud-Native Architecture** - Fully deployed on Google Cloud Platform with auto-scaling
+- **🔄 Event-Driven Processing** - Pub/Sub for scalable, asynchronous email processing
+- **📱 Modern UI** - Responsive React application with Material-UI design system
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend       │    │   GCP Services  │
-│   (React/TS)    │◄──►│   (FastAPI)     │◄──►│   (Cloud Run)   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Firebase      │    │   Pub/Sub       │    │   Vertex AI     │
-│   (Auth/DB)     │    │   (Events)      │    │   (Gemini)      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         │                       ▼                       │
-         │              ┌─────────────────┐              │
-         │              │   process_emails│              │
-         │              │   (Cloud Run)   │              │
-         │              └─────────────────┘              │
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Firestore     │    │   BigQuery      │    │   Analytics     │
-│   (Real-time)   │    │   (Warehouse)   │    │   (dbt)         │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
+OnlyJobs is built with a cloud-native, event-driven architecture for maximum scalability and reliability:
 
-## 📁 Project Structure
-
-```
-onlyjobs/
-├── frontend/                    # React TypeScript application
-│   ├── src/
-│   │   ├── components/         # Reusable UI components
-│   │   ├── pages/             # Route components
-│   │   ├── contexts/          # React contexts (Auth)
-│   │   ├── hooks/             # Custom React hooks
-│   │   ├── services/          # API and external services
-│   │   ├── types/             # TypeScript type definitions
-│   │   └── utils/             # Utility functions
-│   └── package.json
-├── backend/                    # Backend services and functions
-│   ├── api/                   # FastAPI application
-│   ├── services/
-│   │   └── process_emails/    # AI email processing service
-│   ├── functions/
-│   │   └── gmail_fetch/       # Gmail integration functions
-│   ├── config.py              # GCP configuration
-│   └── tests/                 # Backend tests
-├── backend_launch_and_tests/   # Deployment and testing notebooks
-│   ├── deployments.ipynb      # GCP deployment orchestration
-│   └── integration_tests.ipynb # End-to-end testing
-└── docs/                      # Architecture and API documentation
+```mermaid
+graph TB
+    A[React Frontend] --> B[Firebase Auth]
+    A --> C[Cloud Run API]
+    C --> D[Gmail API]
+    C --> E[Pub/Sub Topics]
+    E --> F[Email Processing Service]
+    F --> G[Vertex AI - Gemini]
+    F --> H[BigQuery Warehouse]
+    F --> I[Firestore Database]
+    I --> A
+    H --> J[dbt Transformations]
+    J --> K[Analytics Dashboard]
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+
-- Python 3.9+
-- Google Cloud Platform account
-- Firebase project
-- Gmail API access
+- **Node.js** 18+ and npm
+- **Python** 3.9+ and pip
+- **Google Cloud Platform** account with billing enabled
+- **Firebase** project configured
+- **Gmail API** access enabled
 
-### Frontend Setup
+### 1. Clone and Setup
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd onlyjobs
+
+# Install frontend dependencies
 cd frontend
 npm install
-npm start
-```
 
-### Backend Setup
-
-```bash
-cd backend
+# Install backend dependencies
+cd ../backend
 pip install -r requirements.txt
-python main.py
 ```
 
-### GCP Deployment
+### 2. Environment Configuration
 
-1. **Set up GCP project**:
-   ```bash
-   gcloud config set project YOUR_PROJECT_ID
-   gcloud config set run/region us-central1
-   ```
-
-2. **Deploy services**:
-   ```bash
-   # Run the deployment notebook
-   jupyter notebook backend_launch_and_tests/deployments.ipynb
-   ```
-
-3. **Configure Pub/Sub triggers**:
-   - Set up `new-emails-topic` in Google Cloud Console
-   - Configure push subscription to `process-emails` service
-
-## 🔧 Tech Stack
-
-### Frontend
-- **Framework**: React 18 with TypeScript
-- **Authentication**: Firebase Auth with Google OAuth
-- **UI Library**: Material-UI (MUI) v7 with custom design system
-- **Charts & Visualization**: Recharts for data analytics
-- **State Management**: React Context + Hooks
-- **Routing**: React Router v7
-- **Build Tool**: Create React App
-
-### Backend
-- **API Framework**: FastAPI
-- **Cloud Platform**: Google Cloud Run
-- **AI/ML**: Google Vertex AI (Gemini 2.5 Flash)
-- **Message Queue**: Google Cloud Pub/Sub
-- **Data Warehouse**: Google BigQuery
-- **Real-time DB**: Google Firestore
-- **Containerization**: Docker
-
-### Infrastructure
-- **Deployment**: Google Cloud Build
-- **Orchestration**: Jupyter Notebooks
-- **Monitoring**: Google Cloud Logging
-- **Testing**: Integration tests with Jupyter
-
-## 🤖 AI Email Processing
-
-The system uses Google Vertex AI with Gemini 2.5 Flash to:
-
-1. **Classify emails** as job-related or not
-2. **Extract structured data**:
-   - Company name
-   - Job title
-   - Location
-   - Application status (Applied, Interviewed, Declined, Offer)
-3. **Store results** in both BigQuery (analytics) and Firestore (real-time)
-
-### Processing Flow
-
-```
-Gmail Email → Pub/Sub → process_emails Service → Vertex AI → BigQuery + Firestore
-```
-
-## 📊 Data Architecture
-
-- **BigQuery**: Raw job application data for analytics and dbt transformations
-- **Firestore**: Real-time job application data for frontend dashboard
-- **Firebase Auth**: User authentication and session management
-
-## 🔒 Security
-
-- **Authentication**: Firebase Auth with email verification
-- **Authorization**: Protected routes and API endpoints
-- **Data Encryption**: GCP-managed encryption at rest and in transit
-- **IAM**: Least-privilege access for all services
-
-## 🧪 Testing
-
-- **Unit Tests**: Backend service tests
-- **Integration Tests**: End-to-end testing via Jupyter notebooks
-- **Manual Testing**: Cloud Logging monitoring and BigQuery verification
-
-## 👥 Team
-
-[Andrew Ting](https://github.com/AndrewTing89)
-
-[Xianglong (Jason) Wang](https://github.com/XianglongWang)
-
-[Zicheng (Alex) Zhao](https://github.com/zichengalexzhao)
-
-## 🔄 Git Workflow
-
-### Branching Strategy
-
-1. **Main branch**: `main` (production-ready)
-2. **Development branch**: `develop` (integration)
-3. **Feature branches**: `feature/your-feature-name`
-
-### Workflow
-
-```bash
-# Create development branch
-git checkout -b develop
-git push -u origin develop
-
-# Create feature branch from develop
-git checkout -b feature/your-feature
-# ... work on feature ...
-git push origin feature/your-feature
-
-# Create PR to develop
-# After review, merge to develop
-
-# When ready for production
-git checkout main
-git merge develop
-git push origin main
-```
-
-## 🔧 Configuration
-
-### Environment Variables
+Create environment files:
 
 **Frontend** (`.env.local`):
-```
+```env
 REACT_APP_FIREBASE_API_KEY=your_firebase_api_key
 REACT_APP_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 REACT_APP_FIREBASE_PROJECT_ID=your_project_id
-REACT_APP_API_BASE_URL=http://localhost:8080
+REACT_APP_API_BASE_URL=https://your-api-endpoint.run.app
 ```
 
-**Backend** (Cloud Run environment):
-```
-PROJECT_ID=onlyjobs-465420
+**Backend** - Configure in Google Cloud Console:
+```env
+PROJECT_ID=your-gcp-project-id
 LOCATION=us-central1
 BQ_DATASET_ID=user_data
 BQ_RAW_TABLE_ID=job_applications
 FIRESTORE_DATABASE_ID=emails-firestore
 ```
 
-## 🎨 Frontend Features
+### 3. Local Development
 
-### User Interface
-- **Landing Page**: Modern hero section with feature showcase and call-to-action
-- **Authentication**: Complete auth flow with Firebase integration
-  - Login/Signup pages with Google and Apple OAuth
-  - Email verification flow
-  - Password reset functionality
-- **Dashboard**: 
-  - Interactive sidebar navigation
-  - Summary cards for key metrics (applications, interviews, offers, rejections)
-  - Job applications table with status badges
-  - Real-time data visualization with bar and pie charts
-  - Gmail integration button for email syncing
-- **Settings**: User profile management and preferences
-- **Legal Pages**: Terms of Service and Privacy Policy
-- **Error Handling**: Professional 404 page
-- **Gmail Integration**: Complete OAuth flow UI with backend integration ready
-  - GmailConnection component with stepper UI for OAuth flow
-  - SyncStatus component with real-time sync progress indicators
-  - Settings page integration with connect/disconnect functionality
-  - Dashboard navigation paths with Gmail status indicators
-  - Error handling and loading states for all OAuth operations
-- **Missing**: Profile and Applications detail pages (awaiting UI/UX designs)
+```bash
+# Start frontend development server
+cd frontend
+npm start
 
-### Design System
-- **Color Palette**: Warm orange theme (#FF7043 accent, #FFD7B5 sidebar)
-- **Typography**: Modern, clean fonts with proper hierarchy
-- **Components**: Material-UI v7 with custom styling
-- **Responsive**: Mobile-first design approach
-- **Charts**: Recharts integration for data visualization
+# The app will be available at http://localhost:3000
+```
 
-## 📈 Monitoring & Analytics
+### 4. Deploy to Google Cloud
 
-- **Cloud Logging**: Service logs and error tracking
-- **BigQuery**: Job application analytics
-- **dbt**: Data transformations and modeling
-- **Firebase Analytics**: User behavior tracking
+Use the deployment notebook for automated setup:
 
-## 🚀 Deployment Status
+```bash
+# Open deployment orchestration
+jupyter notebook deployments.ipynb
+```
 
-- ✅ **Frontend**: Complete React app with Firebase Auth and full UI suite
-- ✅ **Gmail OAuth Integration**: 
-  - **Frontend**: Complete OAuth UI with backend connection ✅
-  - **Backend**: Live Cloud Run service at `https://manage-tokens-12002195951.us-central1.run.app` ✅
-  - **Debug Tools**: Firebase token extraction tool for testing ✅
-- ✅ **Backend Services**: 
-  - **AI Processing**: Vertex AI email classification ✅
-  - **Data Storage**: BigQuery + Firestore ✅
-  - **GCP Deployment**: Cloud Run services ✅
-- ✅ **UI/UX**: Complete Material-UI interface with all pages
-- 🔄 **API Integration**: Additional REST endpoints needed for job applications data
-- 🔄 **Analytics**: dbt transformations (planned)
+Or deploy manually:
 
-## 🎯 Next Steps
+```bash
+# Deploy Cloud Run services
+gcloud run deploy process-emails --source backend/services/process_emails
+gcloud run deploy manage-tokens --source backend/functions/manage_tokens
+gcloud run deploy gmail-fetch --source backend/functions/gmail_fetch
 
-### Backend Development (Priority)
-1. **REST API Layer**: Create FastAPI endpoints to bridge frontend with existing services
-   - ✅ **Gmail OAuth**: Complete and live at Cloud Run service
-   - 🔄 `GET /api/applications` - Fetch user job applications from Firestore
-   - 🔄 `GET /api/dashboard/stats` - Dashboard analytics from BigQuery
-   - 🔄 `POST /api/sync/trigger` - Manual email sync
-   
-2. **Data Integration**: Connect existing Firestore data to frontend
-   - User-specific job application queries
-   - Real-time data subscriptions
-   - BigQuery analytics aggregation
+# Deploy frontend to Firebase Hosting
+cd frontend
+npm run build
+firebase deploy
+```
 
-3. **Authentication**: Add Firebase token validation to backend services
-   - Middleware for protected routes
-   - User session management
-   - Email verification checks
+## 🛠️ Tech Stack
 
-### Frontend Development (Enhancement)
-1. **Real Data Integration**: Replace dummy data once backend APIs are ready
-   - Connect dashboard to live Firestore data
-   - ✅ **Gmail OAuth Integration**: Complete with live backend connection
-   - ✅ **Firebase Debug Tools**: Token extraction for backend testing
-   - Add real-time data updates
+### Frontend
+- **React 19** with TypeScript for type-safe development
+- **Material-UI v7** for consistent design system
+- **Firebase Auth** for secure authentication
+- **Recharts** for data visualization
+- **React Router v7** for client-side routing
 
-2. **Advanced Features**: Add enhanced functionality
-   - Application status updates
-   - File upload for resumes/cover letters
-   - Advanced search and filtering
-   - Export functionality
+### Backend
+- **Google Cloud Run** for serverless container deployment
+- **Python Flask** for API services
+- **Google Vertex AI** (Gemini 2.5 Flash) for AI-powered email analysis
+- **Google Pub/Sub** for event-driven architecture
+- **BigQuery** for data warehousing and analytics
+- **Firestore** for real-time database operations
 
-3. **Performance Optimization**: Improve user experience
-   - Implement caching strategies
-   - Add skeleton loading states
-   - Optimize bundle size
+### Infrastructure
+- **Google Cloud Platform** for all cloud services
+- **Docker** for containerization
+- **dbt** for data transformations
+- **Firebase Hosting** for frontend deployment
 
-### Infrastructure (Optional)
-1. **CI/CD Pipeline**: Automated testing and deployment
-2. **Monitoring**: Error tracking and performance monitoring
-3. **Security**: Security audits and penetration testing
+## 🤖 AI Email Processing
 
-## 📝 License
+The system intelligently processes job-related emails using advanced AI:
 
-This project is proprietary and confidential.
+### Classification Process
+1. **Email Ingestion** - Automatic Gmail API synchronization
+2. **AI Analysis** - Vertex AI classifies emails as job-related
+3. **Data Extraction** - Structured data extraction:
+   - Company name and job title
+   - Application status (Applied, Interviewed, Declined, Offer)
+   - Location and salary information
+   - Important dates and deadlines
+4. **Storage** - Dual storage in BigQuery (analytics) and Firestore (real-time)
+
+### Processing Pipeline
+```
+Gmail → Pub/Sub → AI Processing → Data Storage → Real-time Dashboard
+```
+
+## 📊 Data Architecture
+
+- **BigQuery** - Data warehouse for analytics, reporting, and machine learning
+- **Firestore** - NoSQL database for real-time application data
+- **dbt** - Data transformation layer for clean, reliable analytics
+- **Firebase Auth** - User authentication and authorization
+
+## 🔒 Security & Privacy
+
+- **End-to-End Encryption** - All data encrypted in transit and at rest
+- **OAuth 2.0** - Secure Gmail API access with user consent
+- **IAM Controls** - Least-privilege access across all services
+- **Data Privacy** - User data isolated and protected per account
+- **Audit Logging** - Comprehensive logging for security monitoring
+
+## 📈 Analytics & Monitoring
+
+- **Real-time Dashboards** - Live job application metrics and trends
+- **Cloud Logging** - Comprehensive application and error logging
+- **Performance Monitoring** - Service health and performance metrics
+- **Data Quality** - Automated data validation and quality checks
+
+## 🧪 Testing
+
+```bash
+# Frontend tests
+cd frontend
+npm test
+
+# Backend tests
+cd backend
+python -m pytest tests/
+
+# Integration tests
+jupyter notebook integration_tests.ipynb
+```
+
+## 👥 Contributors
+
+- **[Andrew Ting](https://github.com/AndrewTing89)** - Backend Architecture & AI Integration
+- **[Xianglong (Jason) Wang](https://github.com/XianglongWang)** - Frontend Development & UI/UX
+- **[Zicheng (Alex) Zhao](https://github.com/zichengalexzhao)** - Cloud Infrastructure & DevOps
+
+## 📋 Project Status
+
+### ✅ Completed
+- ✅ **Frontend Application** - Complete React app with authentication
+- ✅ **Gmail OAuth Integration** - Secure email access and synchronization
+- ✅ **AI Email Processing** - Vertex AI integration for job application detection
+- ✅ **Cloud Infrastructure** - Production-ready GCP deployment
+- ✅ **Real-time Dashboard** - Interactive analytics and metrics
+
+### 🔄 In Progress
+- 🔄 **Advanced Analytics** - Enhanced dbt transformations
+- 🔄 **Mobile Optimization** - Improved responsive design
+- 🔄 **API Documentation** - Comprehensive API documentation
+
+### 🎯 Roadmap
+- 📋 **Job Board Integration** - Connect with major job platforms
+- 📋 **Resume Management** - Upload and manage resume versions
+- 📋 **Interview Scheduling** - Calendar integration for interviews
+- 📋 **Salary Tracking** - Compensation analysis and trends
+
+## 📄 License
+
+This project is proprietary and confidential. All rights reserved.
+
+---
+
+**OnlyJobs** - Streamline your job search with AI-powered automation 🚀
