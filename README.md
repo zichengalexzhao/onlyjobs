@@ -197,9 +197,9 @@ jupyter notebook integration_tests.ipynb
 
 ## 👥 Contributors
 
-- **[Andrew Ting](https://github.com/AndrewTing89)** - Backend Architecture & AI Integration
-- **[Xianglong (Jason) Wang](https://github.com/XianglongWang)** - Frontend Development & UI/UX
-- **[Zicheng (Alex) Zhao](https://github.com/zichengalexzhao)** - Cloud Infrastructure & DevOps
+- **[Andrew Ting](https://github.com/AndrewTing89)** - Backend Architecture & AI Integration & Cloud Infrastructure
+- **[Xianglong (Jason) Wang](https://github.com/XianglongWang)** - UI/UX
+- **[Zicheng (Alex) Zhao](https://github.com/zichengalexzhao)** - Frontend Architecture & DevOps & Cloud Infrastructure
 
 ## 📋 Project Status
 
