@@ -8,19 +8,12 @@ import {
   Toolbar,
   Typography,
   Avatar,
-  Card,
-  CardContent,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   Divider,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
   Alert,
   Snackbar,
   Menu,
@@ -36,50 +29,8 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart as BarChartC,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer
-} from "recharts";
+import { LookerDashboard } from "../components/LookerDashboard";
 
-// Dummy Data
-const summary = [
-  { label: "Total Applications", value: 24 },
-  { label: "Interviews", value: 8 },
-  { label: "Offers", value: 3 },
-  { label: "Rejections", value: 12 }
-];
-
-const applications = [
-  { company: "Discord", position: "In Review", date: "03/30/2021", lastUpdate: "03/31/2021" },
-  { company: "HubSpot", position: "Interview", date: "05/26/2021", lastUpdate: "07/23/2021" },
-  { company: "Google", position: "Rejected", date: "05/27/2021", lastUpdate: "03/19/2021" },
-  { company: "Netflix", position: "Applied", date: "06/14/2021", lastUpdate: "02/17/2021" },
-  { company: "Microsoft", position: "Applied", date: "05/23/2021", lastUpdate: "03/17/2021" },
-  { company: "Spotify", position: "Applied", date: "03/16/2021", lastUpdate: "03/17/2021" }
-];
-
-const statusData = [
-  { name: "Applied", value: 4 },
-  { name: "In Review", value: 1 },
-  { name: "Interview", value: 1 },
-  { name: "Rejected", value: 1 }
-];
-
-const COLORS = ["#FF7043", "#FFD7B5", "#FF5E62", "#F4B183"];
-
-const barData = [
-  { name: "Applied", count: 4 },
-  { name: "In Review", count: 1 },
-  { name: "Interview", count: 1 },
-  { name: "Rejected", count: 1 }
-];
 
 // Theme colors
 const sidebarColor = "#FFD7B5";
@@ -209,154 +160,76 @@ export default function Dashboard() {
 
       {/* Main Area */}
       <Box sx={{ flexGrow: 1, p: 3 }}>
-        {/* Top Bar */}
-        <AppBar elevation={0} position="static" sx={{ background: "transparent", boxShadow: "none", mb: 2 }}>
-          <Toolbar sx={{ display: "flex", justifyContent: "space-between", p: 0 }}>
-            <Typography variant="h5" sx={{ color: textColor, fontWeight: 700 }}>
-              Dashboard
-            </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              {/* User Profile Dropdown */}
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <IconButton
-                  onClick={handleProfileMenuOpen}
-                  sx={{ 
-                    display: "flex", 
-                    alignItems: "center", 
-                    gap: 1,
-                    color: textColor,
-                    "&:hover": { bgcolor: "rgba(0,0,0,0.04)" }
-                  }}
-                >
-                  <Avatar sx={{ bgcolor: accent, width: 36, height: 36 }}>
-                    {currentUser?.displayName?.charAt(0) || currentUser?.email?.charAt(0) || 'U'}
-                  </Avatar>
-                  <KeyboardArrowDown sx={{ fontSize: 20 }} />
-                </IconButton>
-                
-                <Menu
-                  anchorEl={profileMenuAnchor}
-                  open={Boolean(profileMenuAnchor)}
-                  onClose={handleProfileMenuClose}
-                  PaperProps={{
-                    sx: {
-                      mt: 1,
-                      borderRadius: 2,
-                      minWidth: 200,
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
-                    }
-                  }}
-                >
-                  <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid #eee" }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: textColor }}>
-                      {currentUser?.displayName || "User"}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "#666" }}>
-                      {currentUser?.email}
-                    </Typography>
-                  </Box>
-                  
-                  <MenuItem onClick={handleNavigateToSettings} sx={{ py: 1.5 }}>
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <Settings sx={{ fontSize: 20 }} />
-                    </ListItemIcon>
-                    <ListItemText primary="Settings" />
-                  </MenuItem>
-                  
-                  <MenuItem onClick={() => handleProfileMenuClose()} sx={{ py: 1.5 }}>
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <AccountCircle sx={{ fontSize: 20 }} />
-                    </ListItemIcon>
-                    <ListItemText primary="Profile" />
-                  </MenuItem>
-                  
-                  <Divider />
-                  
-                  <MenuItem onClick={handleLogout} sx={{ py: 1.5, color: "#d32f2f" }}>
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <Logout sx={{ fontSize: 20, color: "#d32f2f" }} />
-                    </ListItemIcon>
-                    <ListItemText primary="Logout" />
-                  </MenuItem>
-                </Menu>
+        {/* Top Bar - User Profile Only */}
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <IconButton
+              onClick={handleProfileMenuOpen}
+              sx={{ 
+                display: "flex", 
+                alignItems: "center", 
+                gap: 1,
+                color: textColor,
+                "&:hover": { bgcolor: "rgba(0,0,0,0.04)" }
+              }}
+            >
+              <Avatar sx={{ bgcolor: accent, width: 36, height: 36 }}>
+                {currentUser?.displayName?.charAt(0) || currentUser?.email?.charAt(0) || 'U'}
+              </Avatar>
+              <KeyboardArrowDown sx={{ fontSize: 20 }} />
+            </IconButton>
+            
+            <Menu
+              anchorEl={profileMenuAnchor}
+              open={Boolean(profileMenuAnchor)}
+              onClose={handleProfileMenuClose}
+              PaperProps={{
+                sx: {
+                  mt: 1,
+                  borderRadius: 2,
+                  minWidth: 200,
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
+                }
+              }}
+            >
+              <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid #eee" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: textColor }}>
+                  {currentUser?.displayName || "User"}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#666" }}>
+                  {currentUser?.email}
+                </Typography>
               </Box>
-            </Box>
-          </Toolbar>
-        </AppBar>
-
-        {/* Summary Cards */}
-        <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-          {summary.map((item, idx) => (
-            <Card key={item.label} sx={{ flex: 1, bgcolor: "#FFF7F1", borderRadius: 3, boxShadow: "none" }}>
-              <CardContent>
-                <Typography sx={{ color: accent, fontWeight: 600 }}>{item.value}</Typography>
-                <Typography variant="body2" sx={{ color: "#a17d54" }}>{item.label}</Typography>
-              </CardContent>
-            </Card>
-          ))}
+              
+              <MenuItem onClick={handleNavigateToSettings} sx={{ py: 1.5 }}>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <Settings sx={{ fontSize: 20 }} />
+                </ListItemIcon>
+                <ListItemText primary="Settings" />
+              </MenuItem>
+              
+              <MenuItem onClick={() => handleProfileMenuClose()} sx={{ py: 1.5 }}>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <AccountCircle sx={{ fontSize: 20 }} />
+                </ListItemIcon>
+                <ListItemText primary="Profile" />
+              </MenuItem>
+              
+              <Divider />
+              
+              <MenuItem onClick={handleLogout} sx={{ py: 1.5, color: "#d32f2f" }}>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <Logout sx={{ fontSize: 20, color: "#d32f2f" }} />
+                </ListItemIcon>
+                <ListItemText primary="Logout" />
+              </MenuItem>
+            </Menu>
+          </Box>
         </Box>
 
-
-        {/* Main Content Area */}
-        <Box sx={{ display: "flex", gap: 3 }}>
-          {/* Applications Table */}
-          <Card sx={{ flex: 2, bgcolor: white, borderRadius: 3, p: 2, boxShadow: "none" }}>
-            <Typography sx={{ mb: 1.5, fontWeight: 600, color: textColor }}>Applications</Typography>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Company</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Date Applied</TableCell>
-                  <TableCell>Last Update</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {applications.map((row) => (
-                  <TableRow key={row.company}>
-                    <TableCell>{row.company}</TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "inline-block", px: 1.5, py: 0.5, borderRadius: 2, background: "#FFF4E1", color: accent, fontWeight: 600, fontSize: 14 }}>
-                        {row.position}
-                      </Box>
-                    </TableCell>
-                    <TableCell>{row.date}</TableCell>
-                    <TableCell>{row.lastUpdate}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
-
-          {/* Charts */}
-          <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
-            {/* Bar Chart */}
-            <Card sx={{ bgcolor: white, borderRadius: 3, p: 2, boxShadow: "none", height: 180 }}>
-              <Typography sx={{ fontWeight: 600, mb: 1, color: textColor }}>Applications by Status</Typography>
-              <ResponsiveContainer width="100%" height="70%">
-                <BarChartC data={barData}>
-                  <XAxis dataKey="name" stroke="#999" />
-                  <YAxis />
-                  <RechartsTooltip />
-                  <Bar dataKey="count" fill={accent} radius={[6, 6, 0, 0]} />
-                </BarChartC>
-              </ResponsiveContainer>
-            </Card>
-            {/* Pie Chart */}
-            <Card sx={{ bgcolor: white, borderRadius: 3, p: 2, boxShadow: "none", height: 180 }}>
-              <Typography sx={{ fontWeight: 600, mb: 1, color: textColor }}>Applications by Status</Typography>
-              <ResponsiveContainer width="100%" height="70%">
-                <PieChart>
-                  <Pie data={statusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={54} innerRadius={34}>
-                    {statusData.map((entry, index) => (
-                      <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </Card>
-          </Box>
+        {/* Looker Studio Dashboard */}
+        <Box sx={{ height: 'calc(105vh - 160px)', width: '100%', overflow: 'hidden' }}>
+          <LookerDashboard height="100%" />
         </Box>
       </Box>
 
